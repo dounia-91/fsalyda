@@ -23,7 +23,7 @@ export default function VerificationEmail({
   return (
     <Html lang="en" dir="ltr">
       <Head>
-        <title>Verification Code</title>
+        <title>Fsalyda Verification Code</title>
         <Font
           fontFamily="Roboto"
           fallbackFontFamily="Verdana"
@@ -42,7 +42,7 @@ export default function VerificationEmail({
         </Row>
         <Row>
           <Text>
-            Thank you for registering your company {companyName}, with us.
+            Thank you for registering your company {companyName}, with Fsalyda.
             Please use the following verification code to complete your
             registration:
           </Text>
