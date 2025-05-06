@@ -1,6 +1,7 @@
 "use client";
+
 import Sidebar from "@/components/sidebar/sidebar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function RootLayout({
   children,
@@ -8,6 +9,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    // Vérifie si le service worker est supporté par le navigateur
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/service-worker.js")
+        .then((registration) => {
+          console.log("Service Worker enregistré avec succès :", registration);
+        })
+        .catch((error) => {
+          console.log("Échec de l'enregistrement du Service Worker :", error);
+        });
+    }
+  }, []);
+
   return (
     <main className="relative w-full h-[calc(100vh-theme(space.20))] flex">
       <div
@@ -44,3 +60,4 @@ export default function RootLayout({
     </main>
   );
 }
+
