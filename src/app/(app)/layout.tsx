@@ -11,6 +11,7 @@ export default function RootLayout({
 
   // Enregistrer le service worker au moment où le composant est monté
   useEffect(() => {
+    // Vérifie si le service worker est supporté par le navigateur
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/service-worker.js")
