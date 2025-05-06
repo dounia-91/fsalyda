@@ -1,15 +1,16 @@
 "use client";
 import Sidebar from "@/components/sidebar/sidebar";
 import { useState, useEffect } from "react";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   // Enregistrer le service worker au moment où le composant est monté
   useEffect(() => {
-    // Vérifie si le service worker est supporté par le navigateur
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/service-worker.js")
@@ -21,6 +22,7 @@ export default function RootLayout({
         });
     }
   }, []);
+
   return (
     <main className="relative w-full h-[calc(100vh-theme(space.20))] flex">
       <div
