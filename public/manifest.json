@@ -2,10 +2,16 @@
   "name": "Fsalyda",
   "short_name": "Fsalyda",
   "description": "Fsalyda est une application web de gestion interne pour digitaliser les processus métiers des entreprises.",
+  "id": "fsalyda",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2a2a2a",
+  "orientation": "portrait",
+  "launch_handler": {
+    "action": "navigate",
+    "url": "/"
+  },
   "icons": [
     {
       "src": "/icon-192.png",
@@ -15,6 +21,18 @@
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot1.png",
+      "sizes": "360x640",
+      "type": "image/png"
+    },
+    {
+      "src": "/screenshot2.png",
+      "sizes": "360x640",
       "type": "image/png"
     }
   ]
