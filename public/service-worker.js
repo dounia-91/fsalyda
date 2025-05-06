@@ -1,5 +1,3 @@
-// service-worker.js
-
 const CACHE_NAME = "fsalyda-cache-v1";
 const urlsToCache = [
   "/",
@@ -14,7 +12,9 @@ const urlsToCache = [
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
+      return cache.addAll(urlsToCache).catch((error) => {
+        console.error("Erreur lors de l'ajout des URLs au cache : ", error);
+      });
     })
   );
 });
@@ -27,7 +27,9 @@ self.addEventListener("activate", (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (!cacheWhitelist.includes(cacheName)) {
-            return caches.delete(cacheName);
+            return caches.delete(cacheName).catch((error) => {
+              console.error("Erreur lors de la suppression des anciens caches : ", error);
+            });
           }
         })
       );
@@ -40,9 +42,12 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        return cachedResponse;
+        return cachedResponse; // Si trouvé dans le cache, retourne la réponse en cache
       }
-      return fetch(event.request);
+      return fetch(event.request).catch((error) => {
+        console.error("Erreur lors de la récupération du fichier : ", error);
+        throw error;
+      }); // Sinon, effectuer une requête réseau
     })
   );
 });
