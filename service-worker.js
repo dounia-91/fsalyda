@@ -1,5 +1,3 @@
-// service-worker.js
-
 const CACHE_NAME = "fsalyda-cache-v1";
 const urlsToCache = [
   "/",
