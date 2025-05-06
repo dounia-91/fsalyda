@@ -24,12 +24,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <link
-          href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
-          rel="stylesheet"
-        ></link>
-      </head>
+     <head>
+  <link
+    href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+    rel="stylesheet"
+  />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2a2a2a" />
+  <link rel="icon" href="/icon-192.png" />
+</head>
       <AuthProvider>
         <body className={`${inter.className} antialiased`}>
           <Navbar />
