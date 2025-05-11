@@ -1,9 +1,24 @@
 "use client";
+import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
 export default function Home() {
   const { status } = useSession();
+
+  // Enregistrement du Service Worker
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/service-worker.js")
+        .then((registration) => {
+          console.log("Service Worker enregistré avec succès :", registration);
+        })
+        .catch((error) => {
+          console.log("Échec de l'enregistrement du Service Worker :", error);
+        });
+    }
+  }, []);
 
   if (status === "unauthenticated") {
     return (
@@ -11,12 +26,8 @@ export default function Home() {
         <h1 className="w-full text-center text-5xl font-bold">
           Welcome to Fsalyda
         </h1>
-
         <p className="w-full text-center text-xl">Please SignIn to Continue</p>
-        <Link
-          className="p-3 bg-white font-bold rounded-lg text-black"
-          href="/signin"
-        >
+        <Link className="p-3 bg-white font-bold rounded-lg text-black" href="/signin">
           SignIn
         </Link>
       </main>
@@ -28,13 +39,14 @@ export default function Home() {
       <h1 className="w-full text-center text-5xl font-bold">
         Welcome to Fsalyda
       </h1>
-
       <p className="w-full text-center text-xl">Continue to your Dashboard</p>
-      <Link
-        className="p-3 bg-white font-bold rounded-lg text-black"
-        href="/dashboard"
-      >
+      <Link className="p-3 bg-white font-bold rounded-lg text-black" href="/dashboard">
         Dashboard
+      </Link>
+    </main>
+  );
+}
+
       </Link>
     </main>
   );
