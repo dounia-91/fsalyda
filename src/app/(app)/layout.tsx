@@ -1,5 +1,6 @@
 "use client";
 import Sidebar from "@/components/sidebar/sidebar";
+import InstallButton from "@/components/InstallButton"; // 🔹 Ajout du bouton d'installation
 import { useState, useEffect } from "react";
 
 export default function RootLayout({
@@ -9,17 +10,16 @@ export default function RootLayout({
 }>) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // Enregistrer le service worker au moment où le composant est monté
+  // Enregistrement du service worker
   useEffect(() => {
-    // Vérifie si le service worker est supporté par le navigateur
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/service-worker.js")
         .then((registration) => {
-          console.log("Service Worker enregistré avec succès :", registration);
+          console.log("✅ Service Worker enregistré :", registration);
         })
         .catch((error) => {
-          console.log("Échec de l'enregistrement du Service Worker :", error);
+          console.log("❌ Échec de l'enregistrement du Service Worker :", error);
         });
     }
   }, []);
@@ -55,7 +55,12 @@ export default function RootLayout({
             }`}
           />
         </span>
+
+        {/* Contenu principal */}
         {children}
+
+        {/* 🔹 Bouton d'installation PWA Fsalyda */}
+        <InstallButton />
       </div>
     </main>
   );
