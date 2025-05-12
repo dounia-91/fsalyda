@@ -5,7 +5,7 @@ const urlsToCache = [
   "/icon-512.png",
   "/screenshot1.png",
   "/screenshot2.png",
-  "/adminDashboard", // ce chemin doit être statique
+  "/adminDashboard" // ce chemin doit être statique et accessible directement
 ];
 
 // Installation du service worker
