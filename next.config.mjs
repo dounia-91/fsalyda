@@ -1,4 +1,4 @@
-import withPWA from 'next-pwa';
+import withPWA from 'next-pwa'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -13,7 +13,7 @@ const nextConfig = {
           },
         ],
       },
-    ];
+    ]
   },
   images: {
     domains: ["fsalydabucket.s3.amazonaws.com"],
@@ -28,7 +28,6 @@ const nextConfig = {
     register: true,
     skipWaiting: true,
   },
-};
+}
 
-export default withPWA(nextConfig);
-
+export default withPWA(nextConfig)
