@@ -1,7 +1,9 @@
 "use client";
+
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import InstallPWAButton from "@/components/InstallPWAButton";
 
 export default function Home() {
   const { status } = useSession();
@@ -30,6 +32,7 @@ export default function Home() {
         <Link className="p-3 bg-white font-bold rounded-lg text-black" href="/signin">
           SignIn
         </Link>
+        <InstallPWAButton />
       </main>
     );
   }
@@ -43,11 +46,7 @@ export default function Home() {
       <Link className="p-3 bg-white font-bold rounded-lg text-black" href="/dashboard">
         Dashboard
       </Link>
-    </main>
-  );
-}
-
-      </Link>
+      <InstallPWAButton />
     </main>
   );
 }
