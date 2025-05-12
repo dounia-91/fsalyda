@@ -5,12 +5,12 @@ const urlsToCache = [
   "/icon-512.png",
   "/screenshot1.png",
   "/screenshot2.png",
-  "/adminDashboard", // attention : ce chemin doit être statique et accessible directement
+  "/adminDashboard", // ce chemin doit être statique
 ];
 
 // Installation du service worker
 self.addEventListener("install", (event) => {
-  self.skipWaiting(); // active le SW immédiatement
+  self.skipWaiting(); // active immédiatement le SW
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(urlsToCache).catch((error) => {
@@ -33,15 +33,15 @@ self.addEventListener("activate", (event) => {
       )
     )
   );
-  return self.clients.claim(); // prend le contrôle des pages sans rechargement
+  return self.clients.claim(); // prend le contrôle sans rechargement
 });
 
 // Intercepter les requêtes réseau
 self.addEventListener("fetch", (event) => {
-  // Ne pas intercepter les appels API ou websockets
+  // Ignorer les méthodes non-GET ou requêtes non HTTP
   if (
     event.request.method !== "GET" ||
-    event.request.url.startsWith("http") === false
+    !event.request.url.startsWith("http")
   ) {
     return;
   }
@@ -54,7 +54,7 @@ self.addEventListener("fetch", (event) => {
 
       return fetch(event.request)
         .then((response) => {
-          // Optionnel : mettre à jour le cache
+          // Mise en cache dynamique
           return caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, response.clone());
             return response;
