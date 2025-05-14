@@ -3,31 +3,51 @@
 import { useEffect, useState } from 'react';
 
 export default function InstallPWAButton() {
-  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    const handler = (e: Event) => {
+    const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
+      console.log('L\'événement beforeinstallprompt a été déclenché dans InstallPWAButton.');
       e.preventDefault();
       setDeferredPrompt(e);
       setIsVisible(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handler as any);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    const checkInstalled = () => {
+      if (window.matchMedia('(display-mode: standalone)').matches || navigator.getInstalledRelatedApps) {
+        console.log('L\'application est déjà installée (InstallPWAButton).');
+        setIsInstalled(true);
+        setIsVisible(false); // Ne pas afficher le bouton si déjà installé
+      }
+    };
+
+    checkInstalled();
+
+    window.addEventListener('appinstalled', () => {
+      console.log('L\'application PWA a été installée (InstallPWAButton).');
+      setIsInstalled(true);
+      setIsVisible(false); // Masquer le bouton après l'installation
+      setDeferredPrompt(null); // Nettoyer deferredPrompt
+    });
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handler as any);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', () => {});
     };
   }, []);
 
   const handleInstallClick = () => {
     if (deferredPrompt) {
-      (deferredPrompt as any).prompt();
-      (deferredPrompt as any).userChoice.then((choiceResult: any) => {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
         if (choiceResult.outcome === 'accepted') {
-          console.log("Installation acceptée");
+          console.log("Installation acceptée (InstallPWAButton)");
         } else {
-          console.log("Installation refusée");
+          console.log("Installation refusée (InstallPWAButton)");
         }
         setDeferredPrompt(null);
         setIsVisible(false);
@@ -35,7 +55,7 @@ export default function InstallPWAButton() {
     }
   };
 
-  if (!isVisible) return null;
+  if (isInstalled || !isVisible) return null;
 
   return (
     <button
