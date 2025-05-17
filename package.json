@@ -29,7 +29,7 @@
     "next": "^15.0.2",
     "next-auth": "^4.24.8",
     "next-cloudinary": "^6.15.0",
-    "next-pwa": "^6.5.0",
+    "next-pwa": "^6.5.4",
     "node-xlsx": "^0.24.0",
     "react": "^18",
     "react-dom": "^18",
