@@ -2,6 +2,7 @@
 
 import { v2 as cloudinary } from 'cloudinary';
 import { NextResponse } from 'next/server';
+import { Buffer } from 'buffer';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -9,8 +10,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Fonction pour convertir un ReadableStream en Buffer
-async function streamToBuffer(readableStream: ReadableStream): Promise<Buffer> {
+async function streamToBuffer(readableStream: ReadableStream<Uint8Array>): Promise<Buffer> {
   const reader = readableStream.getReader();
   const chunks: Uint8Array[] = [];
 
@@ -34,7 +34,6 @@ export async function POST(req: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Upload vers Cloudinary
     const uploadResult = await new Promise<any>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream({ resource_type: 'auto' }, (error, result) => {
         if (error) reject(error);
