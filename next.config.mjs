@@ -20,11 +20,7 @@ const nextConfig = {
   images: {
     domains: ["fsalydabucket.s3.amazonaws.com"],
   },
-  experimental: {
-    serverActions: {
-      bodySizeLimit: "10mb",
-    },
-  },
+  experimental: {},
   pwa: {
     dest: 'public',
     register: true,
