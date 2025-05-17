@@ -1,43 +1,51 @@
+// src/app/api/upload/route.ts
+
 import { v2 as cloudinary } from 'cloudinary';
 import { NextResponse } from 'next/server';
-import { IncomingForm } from 'formidable';
-import fs from 'fs';
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-export async function POST(req) {
-  const form = new IncomingForm();
-  form.uploadDir = '/tmp';
-  form.keepExtensions = true;
+// Fonction pour convertir un ReadableStream en Buffer
+async function streamToBuffer(readableStream: ReadableStream): Promise<Buffer> {
+  const reader = readableStream.getReader();
+  const chunks: Uint8Array[] = [];
 
-  return new Promise((resolve, reject) => {
-    form.parse(req, async (err, fields, files) => {
-      if (err) return reject(NextResponse.json({ error: err.message }));
+  let result;
+  while (!(result = await reader.read()).done) {
+    chunks.push(result.value);
+  }
 
-      const file = files.file;
-      if (!file) return reject(NextResponse.json({ error: 'No file uploaded' }));
+  return Buffer.concat(chunks);
+}
 
-      try {
-        const uploadRes = await cloudinary.uploader.upload(file.filepath, {
-          resource_type: 'auto',
-        });
+export async function POST(req: Request) {
+  try {
+    const formData = await req.formData();
+    const file = formData.get('file') as File;
 
-        fs.unlinkSync(file.filepath); // nettoyer fichier temporaire
+    if (!file) {
+      return NextResponse.json({ error: 'Aucun fichier reçu' }, { status: 400 });
+    }
 
-        resolve(NextResponse.json({ url: uploadRes.secure_url }));
-      } catch (error) {
-        reject(NextResponse.json({ error: error.message }));
-      }
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Upload vers Cloudinary
+    const uploadResult = await new Promise<any>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream({ resource_type: 'auto' }, (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      });
+
+      stream.end(buffer);
     });
-  });
+
+    return NextResponse.json({ url: uploadResult.secure_url });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
