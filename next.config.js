@@ -6,12 +6,27 @@ const withPWA = require("next-pwa")({
   disable: process.env.NODE_ENV === "development",
 });
 
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   experimental: {
     appDir: true,
   },
+  images: {
+    domains: ["fsalydabucket.s3.amazonaws.com"],
+  },
+  headers: async () => [
+    {
+      source: "/api/:path*",
+      headers: [
+        {
+          key: "Cache-Control",
+          value: "no-cache, no-transform",
+        },
+      ],
+    },
+  ],
   webpack(config) {
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
