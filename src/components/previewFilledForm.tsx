@@ -65,8 +65,12 @@ export default function PreviewFilledForm({
       className={`${
         showPreviewModal ? "" : "hidden"
       } fixed inset-0 z-10 bg-gray-800 bg-opacity-50 flex items-center justify-center`}
+      onClick={() => setShowPreviewModal(false)} // fermer au clic hors modal
     >
-      <div className="min-w-md max-w-[90vw] max-h-[80vh] bg-gradient-to-br from-blue-300 to-blue-500 p-6 rounded-lg shadow-lg flex flex-col items-start justify-start space-y-2 overflow-scroll">
+      <div
+        className="min-w-md max-w-[90vw] max-h-[80vh] bg-gradient-to-br from-blue-300 to-blue-500 p-6 rounded-lg shadow-lg flex flex-col items-start justify-start space-y-2 overflow-auto"
+        onClick={(e) => e.stopPropagation()} // empêcher la fermeture au clic dans la modal
+      >
         <h1 className="w-full text-center text-2xl font-bold">
           {formToFillTitle}
         </h1>
@@ -106,3 +110,93 @@ export default function PreviewFilledForm({
             case "Check Box":
               return (
                 <RenderCheckbox
+                  key={index}
+                  itemD={itemD}
+                  formState={formState}
+                  setFormState={setFormState}
+                  preview={true}
+                />
+              );
+            case "Choice":
+              return (
+                <RenderChoice
+                  key={index}
+                  itemD={itemD}
+                  formState={formState}
+                  setFormState={setFormState}
+                  preview={true}
+                />
+              );
+            case "List":
+              return (
+                <RenderList
+                  key={index}
+                  itemD={itemD}
+                  formState={formState}
+                  setFormState={setFormState}
+                  preview={true}
+                />
+              );
+            case "Photo":
+              return (
+                <RenderPhoto
+                  key={index}
+                  itemD={itemD}
+                  formState={formState}
+                  setFormState={setFormState}
+                  preview={true}
+                />
+              );
+            case "Voice Recorder":
+              return (
+                <RenderVoiceRecorder
+                  key={index}
+                  itemD={itemD}
+                  formState={formState}
+                  setFormState={setFormState}
+                  preview={true}
+                />
+              );
+            case "Attached File":
+              return (
+                <RenderAttachedFile
+                  key={index}
+                  itemD={itemD}
+                  formState={formState}
+                  setFormState={setFormState}
+                  preview={true}
+                />
+              );
+            case "Table":
+              return (
+                <RenderTable
+                  key={index}
+                  itemD={itemD}
+                  formState={formState}
+                  setFormState={setFormState}
+                  preview={true}
+                />
+              );
+            case "Image":
+              return (
+                <RenderImage
+                  key={index}
+                  itemD={itemD}
+                  formState={formState}
+                  setFormState={setFormState}
+                  preview={true}
+                />
+              );
+            case "Calculation":
+              return (
+                <RenderCalculation
+                  key={index}
+                  itemD={itemD}
+                  formState={formState}
+                  setFormState={setFormState}
+                  preview={true}
+                />
+              );
+            default:
+              return (
+                <div key={index} className="text-red-500
