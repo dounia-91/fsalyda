@@ -1,31 +1,23 @@
-const withPWA = require('next-pwa');
+const path = require("path");
+const withPWA = require("next-pwa")({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
+});
 
-const isProd = process.env.NODE_ENV === 'production';
-
-/** @type {import('next').NextConfig} */
 const nextConfig = {
-  async headers() {
-    return [
-      {
-        source: "/api/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "no-cache, no-transform",
-          },
-        ],
-      },
-    ];
+  reactStrictMode: true,
+  swcMinify: true,
+  experimental: {
+    appDir: true,
   },
-  images: {
-    domains: ["fsalydabucket.s3.amazonaws.com"],
-  },
-  experimental: {},
-  pwa: {
-    dest: 'public',
-    register: true,
-    skipWaiting: true,
-    disable: !isProd,
+  webpack(config) {
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      "@": path.resolve(__dirname, "src"),
+    };
+    return config;
   },
 };
 
