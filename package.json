@@ -1,22 +1,22 @@
 // next.config.js
+const path = require("path");
 const withPWA = require("next-pwa")({
-  dest: "public",               // dossier de sortie du service worker et assets
-  disable: process.env.NODE_ENV === "development", // désactive en dev
-  register: true,               // auto-register du SW
-  skipWaiting: true,            // activate SW immédiatement après l'installation
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+  skipWaiting: true,
 });
 
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,              // minification avec SWC
+  swcMinify: true,
   experimental: {
-    appDir: true,               // si tu utilises app/ dir Next 13+
+    appDir: true,
   },
   webpack(config) {
-    // Ajout de l'alias @ pour src/
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
-      "@": require("path").resolve(__dirname, "src"),
+      "@": path.resolve(__dirname, "src"),
     };
     return config;
   },
