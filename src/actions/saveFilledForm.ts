@@ -1,93 +1,75 @@
 "use server";
-import dbConnect from "../lib/dbConnect";
-import FilledFormModel from "@/model/filledForm";
+import { prisma } from "@/lib/prisma"; // ton client Prisma
+import { uploadFileToS3 } from "@/lib/s3config"; // ta fonction d’upload sur S3
+
 import { FormItemDetails, FormState } from "@/types/types";
-import AdminModel, { Admin } from "@/model/admin";
-import BusinessUserModel, { BusinessUser } from "@/model/businessUser";
-import NotificationModel from "@/model/notification";
-import { uploadFileToS3 } from "@/lib/s3config";
 
 export const SaveFilledForm = async (
   companyName: string,
   title: string,
   recordData: FormData,
   formItemD: FormItemDetails[],
-  filledBy: string
+  filledByEmail: string
 ) => {
   const recordState: FormState = {};
-  let listCount: number = 0;
-  let attachmentCount: number = 0;
-  let photoCount: number = 0;
-  let tableColCount: number = 0;
+  let listCount = 0;
+  let attachmentCount = 0;
+  let photoCount = 0;
+  let tableColCount = 0;
+
   const entries = Array.from(recordData.entries());
+
+  // Traitement des champs selon type
   await Promise.all(
     formItemD.map(async (itemD) => {
       if (itemD.title === "Photo") {
-        entries.forEach((entry) => {
-          if (entry[0].includes(itemD.newTitle)) {
-            photoCount++;
-          }
-        });
+        photoCount = entries.filter((e) => e[0].includes(itemD.newTitle)).length;
         const photoArr: string[] = [];
         for (let i = 0; i < photoCount; i++) {
-          const { success, url } = await uploadFileToS3(
-            recordData.get(`${itemD.newTitle}[${i}]`) as File
-          );
-          if (success) photoArr.push(url!);
+          const file = recordData.get(`${itemD.newTitle}[${i}]`) as File;
+          if (file) {
+            const { success, url } = await uploadFileToS3(file);
+            if (success && url) photoArr.push(url);
+          }
         }
         recordState[itemD.newTitle] = photoArr;
       } else if (itemD.title === "Attached file") {
-        entries.forEach((entry) => {
-          if (entry[0].includes(itemD.newTitle)) {
-            attachmentCount++;
-          }
-        });
+        attachmentCount = entries.filter((e) => e[0].includes(itemD.newTitle)).length;
         const attachArr: string[] = [];
         for (let i = 0; i < attachmentCount; i++) {
-          const { success, url } = await uploadFileToS3(
-            recordData.get(`${itemD.newTitle}[${i}]`) as File
-          );
-          if (success) attachArr.push(url!);
+          const file = recordData.get(`${itemD.newTitle}[${i}]`) as File;
+          if (file) {
+            const { success, url } = await uploadFileToS3(file);
+            if (success && url) attachArr.push(url);
+          }
         }
         recordState[itemD.newTitle] = attachArr;
       } else if (itemD.title === "List") {
         if (itemD.listMultipleSelection) {
-          entries.forEach((entry) => {
-            if (entry[0].includes(itemD.newTitle)) {
-              listCount++;
-            }
-          });
+          listCount = entries.filter((e) => e[0].includes(itemD.newTitle)).length;
           const ListArr: string[] = [];
           for (let i = 0; i < listCount; i++) {
-            ListArr.push(recordData.get(`${itemD.newTitle}[${i}]`) as string);
+            const val = recordData.get(`${itemD.newTitle}[${i}]`) as string;
+            if (val) ListArr.push(val);
           }
           recordState[itemD.newTitle] = ListArr;
         } else {
-          recordState[itemD.newTitle] = recordData.get(
-            `${itemD.newTitle}`
-          ) as string;
+          recordState[itemD.newTitle] = recordData.get(itemD.newTitle) as string;
         }
       } else if (itemD.title === "Voice Recorder") {
-        const { success, url } = await uploadFileToS3(
-          recordData.get(`${itemD.newTitle}`) as File
-        );
-        if (success) recordState[itemD.newTitle] = url!;
+        const file = recordData.get(itemD.newTitle) as File;
+        if (file) {
+          const { success, url } = await uploadFileToS3(file);
+          if (success && url) recordState[itemD.newTitle] = url;
+        }
       } else if (itemD.title === "Table") {
-        const tableRowCount = parseInt(
-          recordData.get(`${itemD.newTitle}RowCount`) as string
-        );
-        entries.forEach((entry) => {
-          if (entry[0].includes(`${itemD.newTitle}[0]`)) {
-            tableColCount++;
-          }
-        });
+        const tableRowCount = parseInt(recordData.get(`${itemD.newTitle}RowCount`) as string) || 0;
+        tableColCount = entries.filter((e) => e[0].includes(`${itemD.newTitle}[0]`)).length;
         const table: string[][] = [];
         for (let i = 0; i < tableRowCount; i++) {
           const rowArr: string[] = [];
           for (let j = 0; j < tableColCount; j++) {
-            rowArr.push(
-              recordData.get(`${itemD.newTitle}[${i}][${j}]`) as string
-            );
+            rowArr.push(recordData.get(`${itemD.newTitle}[${i}][${j}]`) as string);
           }
           table.push(rowArr);
         }
@@ -97,39 +79,60 @@ export const SaveFilledForm = async (
       }
     })
   );
-  await dbConnect();
+
   try {
-    const newForm = new FilledFormModel({
-      companyName,
-      title,
-      formState: recordState,
-      formItemDetails: formItemD,
-      filledBy,
+    // Sauvegarde dans la base avec Prisma
+    // On récupère d'abord l'ID de l'utilisateur qui a rempli le formulaire
+    const filledBy = await prisma.businessUser.findUnique({
+      where: { email: filledByEmail },
     });
-    await newForm.save();
-    const toUsers: string[] = [];
-    const admins = await AdminModel.find();
-    admins.map((a: Admin) => toUsers.push(a.email));
-    const managers = await BusinessUserModel.find({ companyName });
-    managers.map((m: BusinessUser) => toUsers.push(m.email));
-    if (toUsers.includes(filledBy)) {
-      const index = toUsers.indexOf(filledBy);
-      toUsers.splice(index, 1);
+
+    if (!filledBy) {
+      return { success: false, message: "Utilisateur non trouvé", status: 404 };
     }
+
+    // Création du formulaire rempli
+    const newFilledForm = await prisma.filledForm.create({
+      data: {
+        companyName,
+        title,
+        filledById: filledBy.id,
+        formState: recordState,
+        formItemDetails: formItemD,
+      },
+    });
+
+    // Notifications : on récupère tous les admins et managers de la company
+    const admins = await prisma.admin.findMany();
+    const managers = await prisma.businessUser.findMany({
+      where: { companyName },
+    });
+
+    const toUsersEmails = [
+      ...admins.map((a) => a.email),
+      ...managers.map((m) => m.email),
+    ].filter((email) => email !== filledByEmail); // retirer celui qui a rempli
+
+    // Création des notifications pour chacun
     await Promise.all(
-      toUsers.map(async (u: string) => {
-        const notification = new NotificationModel({
-          title: "New Form Submission",
-          message: `There is a new submission for the form ${title}, by ${filledBy}, for the company ${companyName}`,
-          toUser: u,
-          fromUser: filledBy,
-        });
-        await notification.save();
+      toUsersEmails.map(async (email) => {
+        const toUser = await prisma.businessUser.findUnique({ where: { email } });
+        if (toUser) {
+          await prisma.notification.create({
+            data: {
+              title: "Nouveau formulaire soumis",
+              message: `Le formulaire "${title}" a été rempli par ${filledByEmail} pour la société ${companyName}`,
+              toUserId: toUser.id,
+              fromUserId: filledBy.id,
+            },
+          });
+        }
       })
     );
-    return { success: true, message: "Record Saved successfully", status: 200 };
+
+    return { success: true, message: "Formulaire sauvegardé avec succès", status: 200 };
   } catch (error) {
-    console.log(error);
-    return { success: false, message: "Error saving Record", status: 400 };
+    console.error("Erreur SaveFilledForm :", error);
+    return { success: false, message: "Erreur lors de la sauvegarde du formulaire", status: 500 };
   }
 };
