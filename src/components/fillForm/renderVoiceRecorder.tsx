@@ -16,40 +16,25 @@ export default function RenderVoiceRecorder({
   preview,
 }: Props) {
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
-  const [audioUrl, setAudioUrl] = useState<string>("");
+  const [audioUrl, setAudioUrl] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Lorsqu'on reçoit un état en preview, créer l'URL audio
   useEffect(() => {
-    if (preview) {
-      const storedAudio = formState[itemD.newTitle];
-      if (storedAudio instanceof Blob) {
-        // Si c'est un Blob direct (cas idéal)
-        const url = URL.createObjectURL(storedAudio);
-        setAudioUrl(url);
-      } else if (Array.isArray(storedAudio) && storedAudio.length > 0) {
-        // Si c'est un tableau de Blob (exemple enregistré en chunks)
-        const blob = new Blob(storedAudio, { type: "audio/webm;codecs=opus" });
-        const url = URL.createObjectURL(blob);
-        setAudioUrl(url);
-      } else if (typeof storedAudio === "string") {
-        // Si c'est déjà une URL string
-        setAudioUrl(storedAudio);
-      } else {
-        setAudioUrl("");
-      }
+    if (
+      !preview &&
+      (formState[itemD.newTitle] as Blob[]) &&
+      (formState[itemD.newTitle] as Blob[]).length > 0
+    ) {
+      setRecordedChunks(formState[itemD.newTitle] as Blob[]);
+      const blob = new Blob(recordedChunks, { type: "audio/webm;codecs=opus" });
+      const audioUrl = URL.createObjectURL(blob);
+      setAudioUrl(audioUrl);
     }
   }, [formState, itemD.newTitle, preview]);
-
-  // Nettoyer l'URL audio pour éviter les fuites mémoire
   useEffect(() => {
-    return () => {
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
-    };
+    setRecordedChunks([]);
   }, [audioUrl]);
-
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -57,22 +42,9 @@ export default function RenderVoiceRecorder({
         mimeType: "audio/webm;codecs=opus",
       });
       setIsRecording(true);
-      setRecordedChunks([]); // Reset chunks au début de l'enregistrement
-      mediaRecorderRef.current.start();
-
+      mediaRecorderRef.current.start(1000);
       mediaRecorderRef.current.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          setRecordedChunks((prev) => [...prev, e.data]);
-        }
-      };
-
-      mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: "audio/webm;codecs=opus" });
-        setAudioUrl(URL.createObjectURL(blob));
-        setFormState((prev) => ({
-          ...prev,
-          [itemD.newTitle]: blob,
-        }));
+        setRecordedChunks((prevChunks) => [...prevChunks, e.data]);
       };
     } catch (error) {
       console.error("Error accessing microphone:", error);
@@ -81,9 +53,10 @@ export default function RenderVoiceRecorder({
 
   const stopRecording = () => {
     setIsRecording(false);
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+    if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
     }
+    setFormState({ ...formState, [itemD.newTitle]: recordedChunks });
   };
 
   return (
@@ -95,16 +68,14 @@ export default function RenderVoiceRecorder({
             : itemD.size === "normal"
             ? "text-lg"
             : "text-xl"
-        } font-semibold`}
+        }`}
       >
         {itemD.newTitle} :
       </p>
       {preview ? (
         <div>
-          {audioUrl ? (
-            <audio ref={audioRef} src={audioUrl} controls />
-          ) : (
-            <p className="text-gray-500">Aucun enregistrement audio disponible</p>
+          {formState[itemD.newTitle] && (
+            <audio src={formState[itemD.newTitle] as string} controls />
           )}
         </div>
       ) : (
@@ -113,17 +84,17 @@ export default function RenderVoiceRecorder({
             type="button"
             onClick={startRecording}
             disabled={isRecording}
-            className="p-2 rounded-lg text-white bg-green-500 disabled:bg-green-200"
+            className={`p-2 rounded-lg text-white bg-green-500 disabled:bg-green-200`}
           >
-            Enregistrer
+            Record
           </button>
           <button
             type="button"
             onClick={stopRecording}
             disabled={!isRecording}
-            className="p-2 rounded-lg text-white bg-red-500 disabled:bg-red-200"
+            className={`p-2 rounded-lg text-white bg-red-500 disabled:bg-red-200`}
           >
-            Arrêter
+            Stop
           </button>
           {audioUrl && <audio ref={audioRef} src={audioUrl} controls />}
         </div>
