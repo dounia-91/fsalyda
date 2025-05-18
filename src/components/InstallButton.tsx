@@ -1,14 +1,19 @@
 "use client";
 import { useEffect, useState } from "react";
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+}
+
 export default function InstallButton() {
-  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsVisible(true);
     };
 
@@ -20,10 +25,8 @@ export default function InstallButton() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (deferredPrompt && "prompt" in deferredPrompt) {
-      // @ts-ignore
-      deferredPrompt.prompt();
-      // @ts-ignore
+    if (deferredPrompt) {
+      await deferredPrompt.prompt();
       const result = await deferredPrompt.userChoice;
       if (result.outcome === "accepted") {
         console.log("✅ L'installation a été acceptée");
