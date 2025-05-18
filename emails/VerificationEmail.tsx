@@ -42,7 +42,9 @@ export default function VerificationEmail({
         </Row>
         <Row>
           <Text>
-            Thank you for registering your company {companyName} with Fsalyda. Please use the following verification code to complete your registration:
+            Thank you for registering your company {companyName} with Fsalyda.
+            Please use the following verification code to complete your
+            registration:
           </Text>
         </Row>
         <Row>
@@ -64,14 +66,10 @@ export default function VerificationEmail({
         </Row>
         <Row>
           <Text>
-            If you did not request this code, please ignore this email or contact support.
+            If you did not request this code, please ignore this email or
+            contact support.
           </Text>
         </Row>
-      </Section>
-    </Html>
-  );
-}
-
       </Section>
     </Html>
   );
