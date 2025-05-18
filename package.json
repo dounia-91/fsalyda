@@ -1,56 +1,25 @@
-{
-  "name": "fsalyda",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+// next.config.js
+const withPWA = require("next-pwa")({
+  dest: "public",               // dossier de sortie du service worker et assets
+  disable: process.env.NODE_ENV === "development", // désactive en dev
+  register: true,               // auto-register du SW
+  skipWaiting: true,            // activate SW immédiatement après l'installation
+});
+
+const nextConfig = {
+  reactStrictMode: true,
+  swcMinify: true,              // minification avec SWC
+  experimental: {
+    appDir: true,               // si tu utilises app/ dir Next 13+
   },
-  "dependencies": {
-    "@aws-sdk/client-s3": "^3.685.0",
-    "@fortawesome/fontawesome-free": "^6.6.0",
-    "@hookform/resolvers": "^3.9.0",
-    "@radix-ui/react-icons": "^1.3.0",
-    "@radix-ui/react-label": "^2.1.0",
-    "@radix-ui/react-select": "^2.1.2",
-    "@radix-ui/react-slot": "^1.1.0",
-    "@react-email/components": "^0.0.25",
-    "@types/file-saver": "^2.0.7",
-    "axios": "^1.7.7",
-    "bcryptjs": "^2.4.3",
-    "buffer": "^6.0.3",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.1",
-    "file-saver": "^2.0.5",
-    "lucide-react": "^0.451.0",
-    "mongoose": "^8.7.0",
-    "next": "^15.0.2",
-    "next-auth": "^4.24.8",
-    "next-cloudinary": "^6.15.0",
-    "next-pwa": "^5.6.0",
-    "node-xlsx": "^0.24.0",
-    "react": "^18",
-    "react-dom": "^18",
-    "react-hook-form": "^7.53.0",
-    "react-toastify": "^10.0.5",
-    "resend": "^4.0.0",
-    "tailwind-merge": "^2.5.3",
-    "tailwindcss-animate": "^1.0.7",
-    "uuid": "^11.0.2",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
-    "zod": "^3.23.8"
+  webpack(config) {
+    // Ajout de l'alias @ pour src/
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      "@": require("path").resolve(__dirname, "src"),
+    };
+    return config;
   },
-  "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18.3.0",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.14",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5"
-  }
-}
+};
+
+module.exports = withPWA(nextConfig);
