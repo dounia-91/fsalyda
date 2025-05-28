@@ -2,29 +2,34 @@
 
 import { useState } from 'react';
 
-export default function UploadPage() {
+export default function TestUploadPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [uploadedUrl, setUploadedUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [url, setUrl] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [previewUrl, setPreviewUrl] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
+    setError('');
+    const selectedFile = e.target.files?.[0] || null;
     setFile(selectedFile);
-    setPreview(URL.createObjectURL(selectedFile));
-    setUrl(null);
+
+    if (selectedFile) {
+      const objectUrl = URL.createObjectURL(selectedFile);
+      setPreviewUrl(objectUrl);
+    } else {
+      setPreviewUrl('');
+    }
   };
 
   const handleUpload = async () => {
     if (!file) return;
 
-    setLoading(true);
-
     const formData = new FormData();
     formData.append('file', file);
 
+    setLoading(true);
+    setUploadedUrl('');
     try {
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -33,55 +38,53 @@ export default function UploadPage() {
 
       const data = await res.json();
       if (res.ok) {
-        setUrl(data.url);
+        setUploadedUrl(data.url);
       } else {
-        alert(`Erreur : ${data.error}`);
+        setError(data.error || 'Erreur inconnue');
       }
-    } catch (error) {
-      console.error('Erreur d’upload', error);
+    } catch (err) {
+      setError('Erreur de connexion');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-4 border rounded-xl shadow-md bg-white">
-      <h1 className="text-2xl font-bold mb-4">Téléverser un fichier</h1>
+    <div className="p-6 max-w-xl mx-auto">
+      <h1 className="text-xl font-bold mb-4">Tester l’upload vers S3</h1>
 
-      <input
-        type="file"
-        accept="image/*,audio/*"
-        onChange={handleFileChange}
-        className="mb-4"
-      />
-
-      {preview && file?.type.startsWith('image') && (
-        <img src={preview} alt="Preview" className="mb-4 rounded" />
-      )}
-
-      {preview && file?.type.startsWith('audio') && (
-        <audio controls className="mb-4 w-full">
-          <source src={preview} />
-          Votre navigateur ne supporte pas l’audio.
-        </audio>
-      )}
-
+      <input type="file" onChange={handleFileChange} className="mb-4" />
       <button
         onClick={handleUpload}
-        disabled={!file || loading}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+        className="bg-blue-600 text-white px-4 py-2 rounded"
+        disabled={loading}
       >
-        {loading ? 'Téléversement...' : 'Téléverser'}
+        {loading ? 'Chargement...' : 'Uploader'}
       </button>
 
-      {url && (
+      {previewUrl && (
         <div className="mt-4">
-          <p className="text-green-600">Fichier envoyé avec succès !</p>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+          <p className="font-semibold">Aperçu du fichier :</p>
+          {file?.type.startsWith('image/') && (
+            <img src={previewUrl} alt="Aperçu" className="mt-2 max-w-full h-auto rounded shadow" />
+          )}
+          {file?.type.startsWith('audio/') && (
+            <audio controls src={previewUrl} className="mt-2 w-full" />
+          )}
+        </div>
+      )}
+
+      {uploadedUrl && (
+        <div className="mt-4">
+          <p className="text-green-600">✅ Fichier envoyé avec succès :</p>
+          <a href={uploadedUrl} target="_blank" className="underline text-blue-700">
             Voir le fichier
           </a>
         </div>
       )}
+
+      {error && <p className="text-red-600 mt-2">{error}</p>}
     </div>
   );
 }
+
