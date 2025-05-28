@@ -1,50 +1,33 @@
-// src/app/api/upload/route.ts
+// src/app/api/upload-url/route.ts
 
-import { v2 as cloudinary } from 'cloudinary';
-import { NextResponse } from 'next/server';
-import { Buffer } from 'buffer';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { NextRequest, NextResponse } from 'next/server';
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+const s3 = new S3Client({
+  region: process.env.AWS_REGION!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
 });
 
-async function streamToBuffer(readableStream: ReadableStream<Uint8Array>): Promise<Buffer> {
-  const reader = readableStream.getReader();
-  const chunks: Uint8Array[] = [];
+export async function POST(req: NextRequest) {
+  const { fileName, fileType } = await req.json();
 
-  let result;
-  while (!(result = await reader.read()).done) {
-    chunks.push(result.value);
-  }
+  const bucketName = process.env.AWS_S3_BUCKET_NAME!;
+  const key = `uploads/${Date.now()}-${fileName}`;
 
-  return Buffer.concat(chunks);
-}
+  const command = new PutObjectCommand({
+    Bucket: bucketName,
+    Key: key,
+    ContentType: fileType,
+  });
 
-export async function POST(req: Request) {
-  try {
-    const formData = await req.formData();
-    const file = formData.get('file') as File;
+  const signedUrl = await getSignedUrl(s3, command, { expiresIn: 60 });
 
-    if (!file) {
-      return NextResponse.json({ error: 'Aucun fichier reçu' }, { status: 400 });
-    }
-
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const uploadResult = await new Promise<any>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream({ resource_type: 'auto' }, (error, result) => {
-        if (error) reject(error);
-        else resolve(result);
-      });
-
-      stream.end(buffer);
-    });
-
-    return NextResponse.json({ url: uploadResult.secure_url });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  return NextResponse.json({
+    url: signedUrl,
+    key,
+  });
 }
