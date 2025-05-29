@@ -10,26 +10,19 @@ export default function TestUploadPage() {
   const [previewUrl, setPreviewUrl] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    setFile(selected || null);
+    setPreviewUrl(selected ? URL.createObjectURL(selected) : '');
     setError('');
-    const selectedFile = e.target.files?.[0] || null;
-    setFile(selectedFile);
-
-    if (selectedFile) {
-      const objectUrl = URL.createObjectURL(selectedFile);
-      setPreviewUrl(objectUrl);
-    } else {
-      setPreviewUrl('');
-    }
   };
 
   const handleUpload = async () => {
     if (!file) return;
 
+    setLoading(true);
     const formData = new FormData();
     formData.append('file', file);
 
-    setLoading(true);
-    setUploadedUrl('');
     try {
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -42,7 +35,7 @@ export default function TestUploadPage() {
       } else {
         setError(data.error || 'Erreur inconnue');
       }
-    } catch (err) {
+    } catch {
       setError('Erreur de connexion');
     } finally {
       setLoading(false);
@@ -56,32 +49,30 @@ export default function TestUploadPage() {
       <input type="file" onChange={handleFileChange} className="mb-4" />
       <button
         onClick={handleUpload}
-        className="bg-blue-600 text-white px-4 py-2 rounded"
         disabled={loading}
+        className="bg-blue-600 text-white px-4 py-2 rounded"
       >
         {loading ? 'Chargement...' : 'Uploader'}
       </button>
 
-      {previewUrl && (
-        <div className="mt-4">
-          <p className="font-semibold">Aperçu du fichier :</p>
-          {file?.type.startsWith('image/') && (
-            <img src={previewUrl} alt="Aperçu" className="mt-2 max-w-full h-auto rounded shadow" />
-          )}
-          {file?.type.startsWith('audio/') && (
-            <audio controls src={previewUrl} className="mt-2 w-full" />
-          )}
-        </div>
+      {previewUrl && file?.type.startsWith('image/') && (
+        <img src={previewUrl} alt="preview" className="mt-4 rounded shadow" />
+      )}
+
+      {previewUrl && file?.type.startsWith('audio/') && (
+        <audio controls src={previewUrl} className="mt-4 w-full" />
       )}
 
       {uploadedUrl && (
-        <div className="mt-4">
-          <p className="text-green-600">✅ Fichier envoyé avec succès :</p>
-          <a href={uploadedUrl} target="_blank" className="underline text-blue-700">
-            Voir le fichier
-          </a>
-        </div>
+        <p className="mt-4 text-green-600">
+          Fichier envoyé ! <a href={uploadedUrl} className="underline text-blue-600" target="_blank">Voir</a>
+        </p>
       )}
+
+      {error && <p className="mt-4 text-red-600">{error}</p>}
+    </div>
+  );
+}
 
       {error && <p className="text-red-600 mt-2">{error}</p>}
     </div>
