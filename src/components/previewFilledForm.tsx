@@ -199,4 +199,13 @@ export default function PreviewFilledForm({
               );
             default:
               return (
-                <div key={index} className="text-red-500
+                <div key={index} className="text-red-500"> {/* Correction ici : fermeture de la balise div */}
+                  Type de champ inconnu : {itemD.title}
+                </div>
+              );
+          }
+        })}
+      </div>
+    </div>
+  );
+}
