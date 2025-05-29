@@ -9,10 +9,10 @@ const withPWA = require("next-pwa")({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
-  experimental: {
-    appDir: true,
-  },
+  // swcMinify: true, // Supprimez cette ligne, c'est la valeur par défaut à partir de Next.js 12
+  // experimental: {
+  //   appDir: true, // Supprimez cette ligne, l'App Router est stable et activé par défaut dans Next.js 15
+  // },
   images: {
     domains: ["fsalydabucket.s3.amazonaws.com"],
   },
