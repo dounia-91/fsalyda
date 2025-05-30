@@ -1,174 +1,108 @@
-import React, { useEffect, useRef } from "react";
-import Image from "next/image";
-import { toast } from "react-toastify";
-import { FormItemDetails, FormState } from "@/types/types";
+"use client"
 
-type Props = {
-  itemD: FormItemDetails;
-  formState: FormState;
-  preview?: boolean;
-  setFormState: React.Dispatch<React.SetStateAction<FormState>>;
-};
+import { useEffect, useRef, useState } from "react"
+import Image from "next/image"
+import { Trash2 } from "lucide-react"
 
-export default function RenderPhoto({ itemD, formState, setFormState, preview }: Props) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+type RenderPhotoProps = {
+  file: File
+  index: number
+  updateName: (index: number, newName: string) => void
+  removeFile: (index: number) => void
+  moveFile: (fromIndex: number, toIndex: number) => void
+}
 
-  const maxSize = itemD.maxPicSize! * 1024 * 1024; // Octets
-  const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
-  const fieldName = itemD.newTitle;
+export default function RenderPhoto({
+  file,
+  index,
+  updateName,
+  removeFile,
+  moveFile,
+}: RenderPhotoProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [tempName, setTempName] = useState(file.name)
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  // Nettoyage des URL créées
   useEffect(() => {
-    return () => {
-      const files = formState[fieldName] as File[] | undefined;
-      files?.forEach((file) => URL.revokeObjectURL(file.preview));
-    };
-  }, [formState[fieldName]]);
+    const url = URL.createObjectURL(file)
+    setPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [file])
 
-  const handleClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTempName(e.target.value)
+  }
 
-  const validateFiles = (files: File[]) => {
-    if (itemD.multiplePics) {
-      if (files.length < (itemD.minPics ?? 1)) {
-        toast.error(`Minimum ${itemD.minPics} photos doivent être téléchargées.`);
-        return false;
-      }
-      if (files.length > (itemD.maxPics ?? 10)) {
-        toast.error(`Maximum ${itemD.maxPics} photos autorisées.`);
-        return false;
-      }
-    } else if (files.length > 1) {
-      toast.error("Un seul fichier est autorisé.");
-      return false;
+  const handleNameSave = () => {
+    setIsEditing(false)
+    if (tempName !== file.name) {
+      updateName(index, tempName)
     }
+  }
 
-    for (const file of files) {
-      if (file.size > maxSize) {
-        toast.error(`Le fichier ${file.name} est trop volumineux. Max : ${itemD.maxPicSize}MB.`);
-        return false;
-      }
-      if (!allowedTypes.includes(file.type)) {
-        toast.error(`Fichier ${file.name} invalide (jpeg, png, gif uniquement).`);
-        return false;
-      }
-    }
-    return true;
-  };
-
-  const renameFiles = (files: File[], baseName: string): File[] => {
-    return files.map((file, i) => {
-      const renamed = new File([file], `${baseName}${files.length > 1 ? `_${i + 1}` : ""}`, { type: file.type });
-      (renamed as any).preview = URL.createObjectURL(renamed);
-      return renamed;
-    });
-  };
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData("text/plain", index.toString())
+  }
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    if (!validateFiles(droppedFiles)) return;
-    const renamed = renameFiles(droppedFiles, "Uploaded_File");
+    e.preventDefault()
+    const fromIndex = parseInt(e.dataTransfer.getData("text/plain"), 10)
+    moveFile(fromIndex, index)
+  }
 
-    setFormState((prev) => ({
-      ...prev,
-      [fieldName]: itemD.multiplePics
-        ? [...(prev[fieldName] as File[] ?? []), ...renamed]
-        : renamed,
-    }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files ? Array.from(e.target.files) : [];
-    e.target.value = ""; // permet re-upload même fichier
-    if (!validateFiles(files)) return;
-
-    const renamed = renameFiles(files, "Uploaded_File");
-
-    setFormState((prev) => ({
-      ...prev,
-      [fieldName]: itemD.multiplePics
-        ? [...(prev[fieldName] as File[] ?? []), ...renamed]
-        : renamed,
-    }));
-  };
-
-  const handleRemoveFile = (index: number) => {
-    setFormState((prev) => {
-      const currentFiles = [...(prev[fieldName] as File[] ?? [])];
-      URL.revokeObjectURL((currentFiles[index] as any).preview);
-      currentFiles.splice(index, 1);
-      return {
-        ...prev,
-        [fieldName]: renameFiles(currentFiles, "Uploaded_File"),
-      };
-    });
-  };
-
-  const titleSize =
-    itemD.size === "smaller" ? "text-md" : itemD.size === "normal" ? "text-lg" : "text-xl";
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleNameSave()
+    }
+  }
 
   return (
-    <div className="w-full flex flex-col items-start space-y-2">
-      <p className={`font-bold ${titleSize} text-${itemD.newColor}`}>
-        {itemD.newTitle} :
-      </p>
+    <div
+      draggable
+      onDragStart={handleDragStart}
+      onDrop={handleDrop}
+      onDragOver={(e) => e.preventDefault()}
+      className="relative border rounded-lg shadow-md p-2 bg-white w-40 flex flex-col items-center gap-2"
+    >
+      {previewUrl && (
+        <Image
+          src={previewUrl}
+          alt="preview"
+          width={160}
+          height={160}
+          className="rounded-lg object-cover h-32 w-32"
+        />
+      )}
 
-      {preview ? (
-        <div className="w-full bg-white rounded-lg p-2 flex flex-wrap justify-center gap-5">
-          {(formState[fieldName] as string[] ?? []).map((url, idx) => (
-            <Image key={idx} src={url} alt={`Uploaded Photo ${idx + 1}`} width={400} height={400} />
-          ))}
-        </div>
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          value={tempName}
+          onChange={handleNameChange}
+          onBlur={handleNameSave}
+          onKeyDown={handleKeyDown}
+          className="w-full text-sm border-b outline-none"
+          autoFocus
+        />
       ) : (
-        <div className="file-upload space-y-2">
-          <input
-            type="file"
-            multiple={itemD.multiplePics}
-            onChange={handleFileChange}
-            ref={fileInputRef}
-            style={{ display: "none" }}
-            accept="image/jpeg,image/png,image/gif"
-          />
-          <div
-            className="drop-zone w-full h-40 bg-gray-100 p-2 rounded-lg overflow-auto cursor-pointer"
-            onClick={handleClick}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={handleDrop}
-          >
-            {(formState[fieldName] as File[] ?? []).length > 0 ? (
-              <div className="flex flex-wrap gap-5 p-2">
-                {(formState[fieldName] as File[]).map((file, idx) => (
-                  <div key={idx} className="relative w-[150px] h-auto">
-                    <Image
-                      src={(file as any).preview}
-                      alt={file.name}
-                      width={150}
-                      height={150}
-                      className="rounded"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveFile(idx);
-                      }}
-                      className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
-                      aria-label={`Supprimer le fichier ${file.name}`}
-                      title={`Supprimer ${file.name}`}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <span className="text-gray-600">Déposez des fichiers ici ou cliquez pour sélectionner</span>
-            )}
-          </div>
+        <div
+          className="w-full text-sm truncate cursor-pointer"
+          onClick={() => setIsEditing(true)}
+        >
+          {tempName}
         </div>
       )}
+
+      <button
+        onClick={() => removeFile(index)}
+        className="absolute top-1 right-1 text-red-500"
+        aria-label="Remove photo"
+        type="button"
+      >
+        <Trash2 size={16} />
+      </button>
     </div>
-  );
+  )
 }
+

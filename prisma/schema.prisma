@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,43 +7,72 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  email     String   @unique
-  password  String
-  name      String?
-  company   Company? @relation(fields: [companyId], references: [id])
-  companyId String?  @db.ObjectId
-  forms     Form[]
-  createdAt DateTime @default(now())
+model Company {
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  maxUsers       Int
+  users          User[]
+  forms          Form[]
+  formTemplates  FormTemplate[]  // Ajouté : relation inverse vers FormTemplate
+  createdAt      DateTime        @default(now())
 }
 
-model Company {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  maxUsers  Int?     // limite d'utilisateurs si besoin
-  users     User[]
-  forms     Form[]
-  createdAt DateTime @default(now())
+model User {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  email        String   @unique
+  name         String
+  password     String
+  role         Role     @default(USER)
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id])
+  createdAt    DateTime @default(now())
+  filledForms  Form[]   // Ajouté : relation inverse vers Form
+}
+
+model FormTemplate {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  title      String
+  schema     Json
+  createdBy  String
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id])
+  createdAt  DateTime @default(now())
+  forms      Form[]
 }
 
 model Form {
-  id          String       @id @default(auto()) @map("_id") @db.ObjectId
-  title       String
-  description String?
-  fields      Json         // structure du formulaire (ex: JSON de champs)
-  createdBy   User         @relation(fields: [userId], references: [id])
-  userId      String       @db.ObjectId
-  companyId   String       @db.ObjectId
-  submissions Submission[]
-  createdAt   DateTime     @default(now())
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  filledByUserId String
+  user           User          @relation(fields: [filledByUserId], references: [id])
+  companyId      String
+  company        Company       @relation(fields: [companyId], references: [id])
+  templateId     String
+  template       FormTemplate  @relation(fields: [templateId], references: [id])
+  data           Json
+  files          File[]
+  createdAt      DateTime      @default(now())
 }
 
-model Submission {
+model File {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  url        String
+  type       String   // "image", "audio", "pdf", etc.
+  formId     String
+  form       Form     @relation(fields: [formId], references: [id])
+  uploadedAt DateTime @default(now())
+}
+
+model Notification {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  form      Form     @relation(fields: [formId], references: [id])
-  formId    String   @db.ObjectId
-  data      Json     // réponses du formulaire
-  fileUrls  String[] // URLs S3 des fichiers (images, vocaux, etc.)
+  type      String
+  content   String
+  recipient String
+  seen      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  USER
 }
