@@ -65,11 +65,11 @@ export default function PreviewFilledForm({
       className={`${
         showPreviewModal ? "" : "hidden"
       } fixed inset-0 z-10 bg-gray-800 bg-opacity-50 flex items-center justify-center`}
-      onClick={() => setShowPreviewModal(false)} // fermer au clic hors modal
+      onClick={() => setShowPreviewModal(false)}
     >
       <div
         className="min-w-md max-w-[90vw] max-h-[80vh] bg-gradient-to-br from-blue-300 to-blue-500 p-6 rounded-lg shadow-lg flex flex-col items-start justify-start space-y-2 overflow-auto"
-        onClick={(e) => e.stopPropagation()} // empêcher la fermeture au clic dans la modal
+        onClick={(e) => e.stopPropagation()}
       >
         <h1 className="w-full text-center text-2xl font-bold">
           {formToFillTitle}
@@ -199,7 +199,7 @@ export default function PreviewFilledForm({
               );
             default:
               return (
-                <div key={index} className="text-red-500"> {/* Correction ici : fermeture de la balise div */}
+                <div key={index} className="text-red-500">
                   Type de champ inconnu : {itemD.title}
                 </div>
               );
