@@ -17,10 +17,20 @@ export default function RenderVoiceRecorder({
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const [audioUrl, setAudioUrl] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0); // durée en secondes
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // 🟢 Charger un enregistrement existant dans le formState
+  // Format mm:ss
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
   useEffect(() => {
     if (
       !preview &&
@@ -33,24 +43,20 @@ export default function RenderVoiceRecorder({
       setRecordedChunks(chunks);
       setAudioUrl(url);
 
-      return () => URL.revokeObjectURL(url); // nettoyage
+      return () => URL.revokeObjectURL(url);
     }
   }, [formState, itemD.newTitle, preview]);
 
-  // 🟢 Quand `recordedChunks` change, mettre à jour l’URL audio
   useEffect(() => {
     if (recordedChunks.length > 0) {
       const blob = new Blob(recordedChunks, { type: "audio/webm;codecs=opus" });
       const url = URL.createObjectURL(blob);
       setAudioUrl(url);
-
-      // Enregistrer dans formState
       setFormState((prev) => ({
         ...prev,
         [itemD.newTitle]: recordedChunks,
       }));
-
-      return () => URL.revokeObjectURL(url); // nettoyer
+      return () => URL.revokeObjectURL(url);
     }
   }, [recordedChunks]);
 
@@ -62,18 +68,25 @@ export default function RenderVoiceRecorder({
       });
 
       const chunks: Blob[] = [];
-
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunks.push(e.data);
       };
 
       recorder.onstop = () => {
         setRecordedChunks(chunks);
+        clearInterval(intervalRef.current!);
+        setRecordingTime(0);
       };
 
       recorder.start();
       mediaRecorderRef.current = recorder;
       setIsRecording(true);
+
+      // Démarrage du timer
+      setRecordingTime(0);
+      intervalRef.current = setInterval(() => {
+        setRecordingTime((t) => t + 1);
+      }, 1000);
     } catch (error) {
       console.error("Erreur d'accès au micro :", error);
     }
@@ -84,6 +97,28 @@ export default function RenderVoiceRecorder({
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
     }
+    // clearInterval sera appelé dans onstop du recorder
+  };
+
+  const deleteRecording = () => {
+    setRecordedChunks([]);
+    setAudioUrl("");
+    setFormState((prev) => ({
+      ...prev,
+      [itemD.newTitle]: [],
+    }));
+    setRecordingTime(0);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+  };
+
+  const downloadRecording = () => {
+    if (!audioUrl) return;
+    const a = document.createElement("a");
+    a.href = audioUrl;
+    a.download = `${itemD.newTitle || "memo"}.webm`;
+    a.click();
   };
 
   return (
@@ -107,24 +142,53 @@ export default function RenderVoiceRecorder({
           ) : null}
         </div>
       ) : (
-        <div className="w-full flex items-center justify-start space-x-2">
-          <button
-            type="button"
-            onClick={startRecording}
-            disabled={isRecording}
-            className="p-2 rounded-lg text-white bg-green-500 disabled:bg-green-200"
-          >
-            Record
-          </button>
-          <button
-            type="button"
-            onClick={stopRecording}
-            disabled={!isRecording}
-            className="p-2 rounded-lg text-white bg-red-500 disabled:bg-red-200"
-          >
-            Stop
-          </button>
-          {audioUrl && <audio ref={audioRef} src={audioUrl} controls />}
+        <div className="w-full flex flex-col gap-2">
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={startRecording}
+              disabled={isRecording}
+              className="p-2 rounded-lg text-white bg-green-500 disabled:bg-green-200 text-xl"
+              title="Enregistrer"
+            >
+              🎤
+            </button>
+            <button
+              type="button"
+              onClick={stopRecording}
+              disabled={!isRecording}
+              className="p-2 rounded-lg text-white bg-red-500 disabled:bg-red-200 text-xl"
+              title="Arrêter"
+            >
+              ⏹️
+            </button>
+            {/* Affichage durée */}
+            {isRecording && (
+              <span className="ml-2 font-mono text-lg">{formatTime(recordingTime)}</span>
+            )}
+            {audioUrl && <audio ref={audioRef} src={audioUrl} controls />}
+          </div>
+
+          {audioUrl && (
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={deleteRecording}
+                className="p-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-black text-xl"
+                title="Supprimer"
+              >
+                🗑️
+              </button>
+              <button
+                type="button"
+                onClick={downloadRecording}
+                className="p-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xl"
+                title="Télécharger"
+              >
+                ⬇️
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
