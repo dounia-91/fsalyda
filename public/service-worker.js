@@ -1,26 +1,26 @@
 const CACHE_NAME = "fsalyda-cache-v1";
 const urlsToCache = [
   "/",
+  "/manifest.json",
   "/icon-192.png",
   "/icon-512.png",
   "/screenshot1.png",
   "/screenshot2.png",
-  "/adminDashboard" // Ce chemin doit être statique et accessible directement
+  "/adminDashboard"
+  // "/offline.html" // si tu crées une page hors-ligne dédiée
 ];
 
-// Installation du service worker : cache les ressources essentielles
 self.addEventListener("install", (event) => {
-  self.skipWaiting(); // Prendre contrôle immédiatement après installation
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache).catch((error) => {
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll(urlsToCache).catch((error) => {
         console.error("Erreur lors de l'ajout au cache : ", error);
-      });
-    })
+      })
+    )
   );
 });
 
-// Activation du service worker : supprime les anciens caches
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) =>
@@ -33,20 +33,18 @@ self.addEventListener("activate", (event) => {
       )
     )
   );
-  return self.clients.claim(); // Prend le contrôle des pages sans rechargement
+  return self.clients.claim();
 });
 
-// Interception des requêtes réseau
 self.addEventListener("fetch", (event) => {
-  // On gère uniquement les requêtes GET et HTTP/HTTPS
   if (event.request.method !== "GET" || !event.request.url.startsWith("http")) {
     return;
   }
 
-  // Pour les ressources statiques (icônes, screenshots), stratégie cache-first
   if (
     event.request.url.includes("icon-") ||
-    event.request.url.includes("screenshot")
+    event.request.url.includes("screenshot") ||
+    event.request.url.includes("manifest")
   ) {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
@@ -54,22 +52,27 @@ self.addEventListener("fetch", (event) => {
       })
     );
   } else {
-    // Pour les autres requêtes, stratégie network-first avec fallback cache
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          // Mise à jour du cache avec la nouvelle réponse
-          return caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, response.clone());
-            return response;
-          });
+          if (
+            response &&
+            response.status === 200 &&
+            response.type === "basic"
+          ) {
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, response.clone()).catch((e) => {
+                console.warn("Erreur cache.put", e);
+              });
+            });
+          }
+          return response;
         })
-        .catch(() => caches.match(event.request)) // Si offline, renvoyer la réponse du cache si possible
+        .catch(() => caches.match(event.request))
     );
   }
 });
 
-// Gestion des notifications push (si tu comptes les utiliser)
 self.addEventListener("push", (event) => {
   const options = {
     body: event.data ? event.data.text() : "Notification reçue",
@@ -82,7 +85,6 @@ self.addEventListener("push", (event) => {
   );
 });
 
-// Gestion du clic sur la notification : ouvre la page d'accueil
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   event.waitUntil(clients.openWindow("/"));
