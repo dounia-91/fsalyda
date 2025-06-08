@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
-import { Trash2 } from "lucide-react"
+import { Trash2, Pencil, Download } from "lucide-react"
 
 type RenderPhotoProps = {
   file: File
@@ -57,13 +57,21 @@ export default function RenderPhoto({
     }
   }
 
+  const downloadImage = () => {
+    if (!previewUrl) return
+    const a = document.createElement("a")
+    a.href = previewUrl
+    a.download = tempName
+    a.click()
+  }
+
   return (
     <div
       draggable
       onDragStart={handleDragStart}
       onDrop={handleDrop}
       onDragOver={(e) => e.preventDefault()}
-      className="relative border rounded-lg shadow-md p-2 bg-white w-40 flex flex-col items-center gap-2"
+      className="relative border rounded-xl shadow-md p-2 bg-white w-40 flex flex-col items-center gap-2 group"
     >
       {previewUrl && (
         <Image
@@ -75,29 +83,49 @@ export default function RenderPhoto({
         />
       )}
 
-      {isEditing ? (
-        <input
-          ref={inputRef}
-          value={tempName}
-          onChange={handleNameChange}
-          onBlur={handleNameSave}
-          onKeyDown={handleKeyDown}
-          className="w-full text-sm border-b outline-none"
-          autoFocus
-        />
-      ) : (
-        <div
-          className="w-full text-sm truncate cursor-pointer"
-          onClick={() => setIsEditing(true)}
+      <div className="flex items-center justify-between w-full text-sm">
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            value={tempName}
+            onChange={handleNameChange}
+            onBlur={handleNameSave}
+            onKeyDown={handleKeyDown}
+            className="w-full text-sm border-b outline-none"
+            autoFocus
+          />
+        ) : (
+          <div className="truncate w-full">{tempName}</div>
+        )}
+        {!isEditing && (
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            className="ml-1 text-gray-500 hover:text-black"
+            title="Renommer"
+          >
+            <Pencil size={14} />
+          </button>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between w-full px-1">
+        <span className="text-xs text-gray-500">
+          {(file.size / 1024).toFixed(1)} ko
+        </span>
+        <button
+          onClick={downloadImage}
+          className="text-blue-500 hover:text-blue-700"
+          title="Télécharger"
         >
-          {tempName}
-        </div>
-      )}
+          <Download size={16} />
+        </button>
+      </div>
 
       <button
         onClick={() => removeFile(index)}
-        className="absolute top-1 right-1 text-red-500"
-        aria-label="Remove photo"
+        className="absolute top-1 right-1 text-red-500 hover:text-red-700"
+        aria-label="Supprimer la photo"
         type="button"
       >
         <Trash2 size={16} />
@@ -105,4 +133,3 @@ export default function RenderPhoto({
     </div>
   )
 }
-
