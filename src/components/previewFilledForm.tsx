@@ -41,18 +41,14 @@ export default function PreviewFilledForm({
     formItemDetails.forEach((itemD) => {
       const value = recordState[itemD.newTitle];
 
-      if (itemD.title === "Voice Recorder" && Array.isArray(value)) {
-        // Convert Blob[] en URL audio
-        initState[itemD.newTitle] = URL.createObjectURL(
-          new Blob(value, { type: "audio/webm;codecs=opus" })
-        );
-      } else if (itemD.title === "Photo" && Array.isArray(value)) {
-        // Convertir chaque fichier image en URL
-        initState[itemD.newTitle] = value.map((file: File | Blob | string) =>
-          typeof file === "string" ? file : URL.createObjectURL(file)
-        );
+      if (itemD.title === "Voice Recorder") {
+        // Stocke les URLs directement
+        initState[itemD.newTitle] = Array.isArray(value) ? value : [value];
+      } else if (itemD.title === "Photo") {
+        // Stocke les URLs directement
+        initState[itemD.newTitle] = Array.isArray(value) ? value : [value];
       } else {
-        // Pour les autres types, garder la valeur telle quelle
+        // Stocke les autres valeurs telles quelles
         initState[itemD.newTitle] = value;
       }
     });
