@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import ClientLayoutWrapper from "./ClientLayoutWrapper"; // nouveau composant client
+import ClientLayoutWrapper from "./ClientLayoutWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
