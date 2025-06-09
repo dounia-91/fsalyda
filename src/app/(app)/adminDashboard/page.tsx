@@ -4,6 +4,7 @@ import { Notification } from "@/model/notification";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import InstallButton from "@/components/InstallButton"; // 👈 Bouton d'installation PWA
 
 export default function AdminDashboard() {
   const { data: session } = useSession();
@@ -20,16 +21,19 @@ export default function AdminDashboard() {
           setNotifications([]);
         }
       } catch (error) {
-        console.log("Error fecting Notifications", error);
+        console.log("Error fetching Notifications", error);
       }
     };
     fetchNotifications();
-    // Set up a polling interval (adjust as needed)
-    const intervalId = setInterval(fetchNotifications, 5000); // Fetch data every 5 seconds
+
+    // Set up polling interval
+    const intervalId = setInterval(fetchNotifications, 5000);
     return () => clearInterval(intervalId);
   }, [session]);
+
   return (
     <main className="w-full h-full flex flex-col bg-background bg-auto bg-no-repeat bg-center">
+      <InstallButton /> {/* 👈 Ajout du bouton flottant d'installation */}
       <div className="w-full h-full flex flex-col items-center p-10 bg-gradient-to-br from-blue-600/50 to-blue-200/50 overflow-auto space-y-5">
         <h1 className="w-full text-center text-3xl font-bold">
           Welcome to admin Dashboard
