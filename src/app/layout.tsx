@@ -1,3 +1,5 @@
+"use client";
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -6,6 +8,7 @@ import Navbar from "@/components/navbar";
 import AuthProvider from "./context/AuthProvider";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import useRegisterSW from "@/hooks/useRegisterSW"; // 🧩 hook pour enregistrer le Service Worker
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,17 +25,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  useRegisterSW(); // ✅ Enregistrement du Service Worker
+
   return (
     <html lang="en">
-     <head>
-  <link
-    href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
-    rel="stylesheet"
-  />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#2a2a2a" />
-  <link rel="icon" href="/icon-192.png" />
-</head>
+      <head>
+        <link
+          href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+          rel="stylesheet"
+        />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#2a2a2a" />
+        <link rel="icon" href="/icon-192.png" />
+      </head>
       <AuthProvider>
         <body className={`${inter.className} antialiased`}>
           <Navbar />
