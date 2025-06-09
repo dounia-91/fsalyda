@@ -1,14 +1,8 @@
-"use client";
-
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import Navbar from "@/components/navbar";
-import AuthProvider from "./context/AuthProvider";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import useRegisterSW from "@/hooks/useRegisterSW"; // 🧩 hook pour enregistrer le Service Worker
+import ClientLayoutWrapper from "./ClientLayoutWrapper"; // nouveau composant client
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,13 +14,7 @@ export const metadata: Metadata = {
   description: "",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  useRegisterSW(); // ✅ Enregistrement du Service Worker
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
@@ -38,13 +26,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#2a2a2a" />
         <link rel="icon" href="/icon-192.png" />
       </head>
-      <AuthProvider>
-        <body className={`${inter.className} antialiased`}>
-          <Navbar />
-          {children}
-          <ToastContainer />
-        </body>
-      </AuthProvider>
+      <body className={`${inter.className} antialiased`}>
+        <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
+      </body>
     </html>
   );
 }
