@@ -50,3 +50,4 @@ const BusinessUserModel =
   mongoose.model<BusinessUser>("BusinessUsers", BusinessUserSchema);
 
 export default BusinessUserModel;
+export { BusinessUserSchema };

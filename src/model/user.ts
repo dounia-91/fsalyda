@@ -58,3 +58,5 @@ const UserModel =
   mongoose.model<User>("Users", UserSchema);
 
 export default UserModel;
+export { UserSchema };
+

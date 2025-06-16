@@ -1,11 +1,32 @@
 import { useEffect, useRef, useState } from "react";
 import { FormItemDetails, FormState } from "@/types/types";
+import { uploadFileToS3 } from "@/lib/s3config";
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 type Props = {
   itemD: FormItemDetails;
   formState: FormState;
   preview?: boolean;
   setFormState: React.Dispatch<React.SetStateAction<FormState>>;
+};
+
+// Initialize S3 client
+const s3 = new S3Client({
+  region: process.env.AWS_REGION!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+
+// Function to generate presigned URL
+const getPresignedUrl = async (key: string) => {
+  const command = new GetObjectCommand({
+    Bucket: 'fsalyda-stockage-2025',
+    Key: key,
+  });
+  return await getSignedUrl(s3 as any, command, { expiresIn: 3600 });
 };
 
 export default function RenderVoiceRecorder({
@@ -15,12 +36,13 @@ export default function RenderVoiceRecorder({
   preview,
 }: Props) {
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
-  const [audioUrl, setAudioUrl] = useState("");
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0); // durée en secondes
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [s3Key, setS3Key] = useState<string | null>(null);
 
   // Format mm:ss
   const formatTime = (seconds: number) => {
@@ -35,7 +57,7 @@ export default function RenderVoiceRecorder({
     if (
       !preview &&
       Array.isArray(formState[itemD.newTitle]) &&
-      formState[itemD.newTitle].length > 0
+      (formState[itemD.newTitle] as any[]).length > 0
     ) {
       const chunks = formState[itemD.newTitle] as Blob[];
       const blob = new Blob(chunks, { type: "audio/webm;codecs=opus" });
@@ -48,17 +70,11 @@ export default function RenderVoiceRecorder({
   }, [formState, itemD.newTitle, preview]);
 
   useEffect(() => {
-    if (recordedChunks.length > 0) {
-      const blob = new Blob(recordedChunks, { type: "audio/webm;codecs=opus" });
-      const url = URL.createObjectURL(blob);
-      setAudioUrl(url);
-      setFormState((prev) => ({
-        ...prev,
-        [itemD.newTitle]: recordedChunks,
-      }));
-      return () => URL.revokeObjectURL(url);
+    if (audioUrl) {
+      // Use audioUrl as a string
+      console.log('Audio URL:', audioUrl);
     }
-  }, [recordedChunks]);
+  }, [audioUrl]);
 
   const startRecording = async () => {
     try {
@@ -72,10 +88,24 @@ export default function RenderVoiceRecorder({
         if (e.data.size > 0) chunks.push(e.data);
       };
 
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         setRecordedChunks(chunks);
         clearInterval(intervalRef.current!);
         setRecordingTime(0);
+
+        // Upload to S3
+        const blob = new Blob(chunks, { type: 'audio/webm;codecs=opus' });
+        const key = `uploads/recording-${Date.now()}.webm`;
+        try {
+          await s3.send(new PutObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME!,
+            Key: key,
+            Body: blob,
+          }));
+          setS3Key(key);
+        } catch (err) {
+          console.error('Failed to upload to S3:', err);
+        }
       };
 
       recorder.start();
@@ -92,17 +122,46 @@ export default function RenderVoiceRecorder({
     }
   };
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     setIsRecording(false);
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
     }
-    // clearInterval sera appelé dans onstop du recorder
+    // clearInterval will be called in onstop of recorder
   };
 
+  const fetchFromS3 = async (key: string) => {
+    try {
+      const response = await s3.send(new GetObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME!,
+        Key: key,
+      }));
+      const blob = await response.Body?.transformToByteArray();
+      if (blob) {
+        const url = URL.createObjectURL(new Blob([blob], { type: 'audio/webm;codecs=opus' }));
+        setAudioUrl(url);
+      }
+    } catch (err) {
+      console.error('Failed to fetch from S3:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (s3Key) {
+      fetchFromS3(s3Key);
+    }
+  }, [s3Key]);
+
+  useEffect(() => {
+    const value = formState[itemD.newTitle];
+    if (typeof value === "string" && value.startsWith("https://")) {
+      setAudioUrl(value);
+    }
+  }, [formState, itemD.newTitle]);
+  
   const deleteRecording = () => {
     setRecordedChunks([]);
-    setAudioUrl("");
+    setAudioUrl(null);
     setFormState((prev) => ({
       ...prev,
       [itemD.newTitle]: [],
@@ -124,13 +183,12 @@ export default function RenderVoiceRecorder({
   return (
     <div className="w-full flex flex-col items-start justify-start space-y-2">
       <p
-        className={`w-full text-${itemD.newColor} ${
-          itemD.size === "smaller"
-            ? "text-md"
-            : itemD.size === "normal"
+        className={`w-full text-${itemD.newColor} ${itemD.size === "smaller"
+          ? "text-md"
+          : itemD.size === "normal"
             ? "text-lg"
             : "text-xl"
-        }`}
+          }`}
       >
         {itemD.newTitle} :
       </p>

@@ -35,6 +35,26 @@ const nextConfig = {
     };
     return config;
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'fsalyda-stockage-2025.s3.amazonaws.com', // or your deployed domain
+      },
+    ],
+  },
 };
 
 module.exports = withPWA(nextConfig);
+
+// images: {
+//   remotePatterns: [
+//     {
+//       protocol: 'https',
+//       hostname: 'fsalyda-stockage-2025.s3.amazonaws.com',
+//       // Optionally restrict paths:
+//       // pathname: '/uploads/**',
+//     },
+//     // Add other domains if needed
+//   ],
+// },

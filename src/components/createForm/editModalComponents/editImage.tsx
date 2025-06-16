@@ -19,7 +19,9 @@ export default function EditImage({
   setItemToEditName,
 }: Props) {
   const [title, setTitle] = useState(itemD.newTitle!);
-  const [imgFiles, setImgFiles] = useState(itemD.imageFiles!);
+  // const [imgFiles, setImgFiles] = useState(itemD.imageFiles!);
+  const [imgFiles, setImgFiles] = useState(itemD.imageFileURLs!);
+
   const [itemSize, setItemSize] = useState(itemD.size!);
   const [itemColor, setItemColor] = useState(itemD.newColor!);
   const [arrowUp, setArrowUp] = useState(false);
@@ -32,6 +34,7 @@ export default function EditImage({
     "indigo-500",
     "yellow-500",
   ];
+ 
   return (
     <form
       id="editItemD"
@@ -45,7 +48,8 @@ export default function EditImage({
         onChange={(e) => setTitle(e.target.value)}
       />
       <p className="text-lg font-bold">Fixed Image (Max Size 2MB) :</p>
-      <FileUpload setImgFiles={setImgFiles} imageFiles={imgFiles} />
+      
+      <FileUpload setImgFiles={setImgFiles} imgFiles={imgFiles} />
       <p className="mt-2 text-lg font-bold">Size of the item :</p>
       <select
         value={itemSize}

@@ -445,10 +445,14 @@ export default function CreateForm({
       if (itemD.title === "Image") {
         for (let i = 0; i < itemD.imageFiles!.length; i++) {
           const file = itemD.imageFiles![i];
-          const { success, url } = await uploadFileToS3(file);
-          if (success) {
-            itemD.imageFileURLs!.splice(i, 1, url!);
-            itemD.imageFiles!.splice(i, 1);
+          if (!file || !(file instanceof Blob)) {
+          } else {
+            const { success, url } = await uploadFileToS3(file);
+            
+            if (success) {
+              itemD.imageFileURLs!.splice(i, 1, url!);
+              itemD.imageFiles!.splice(i, 1);
+            }
           }
         }
       }
@@ -502,9 +506,8 @@ export default function CreateForm({
   return (
     <>
       <h1
-        className={`w-full ${
-          eFormName === "" ? "text-black" : "text-white"
-        } text-center text-3xl font-bold p-5`}
+        className={`w-full ${eFormName === "" ? "text-black" : "text-white"
+          } text-center text-3xl font-bold p-5`}
       >
         {eFormName === "" ? "Create a form" : `Edit ${eFormName}`}
       </h1>

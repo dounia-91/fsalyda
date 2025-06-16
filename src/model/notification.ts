@@ -8,7 +8,7 @@ export interface Notification extends Document {
   isRead: boolean;
   createdAt: Date;
 }
-export const notificationSchema: Schema<Notification> = new mongoose.Schema({
+export const NotificationSchema: Schema<Notification> = new mongoose.Schema({
   title: { type: String, required: true },
   message: { type: String, required: true },
   fromUser: { type: String, required: true },
@@ -19,6 +19,6 @@ export const notificationSchema: Schema<Notification> = new mongoose.Schema({
 
 const NotificationModel =
   (mongoose.models.Notifications as mongoose.Model<Notification>) ||
-  mongoose.model<Notification>("Notifications", notificationSchema);
+  mongoose.model<Notification>("Notifications", NotificationSchema);
 
 export default NotificationModel;
