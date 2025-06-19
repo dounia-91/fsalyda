@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const file = formData.get('file');
-
+    
     if (!file || !(file instanceof Blob)) {
       return NextResponse.json({ error: 'Fichier manquant' }, { status: 400 });
     }

@@ -35,6 +35,7 @@ export const authOptions: NextAuthOptions = {
             let user = await AdminModel.findOne({
               email: credentials?.identifier.toLowerCase(),
             });
+
             if (!user) {
               user = await BusinessUserModel.findOne({
                 email: credentials?.identifier.toLowerCase(),

@@ -187,6 +187,8 @@ export default function RenderAttachedFile({
                 <span>Drag and drop files here, or click to select files</span>
                 <div className="flex items-center justify-center flex-wrap gap-5 p-2">
                   {(formState[itemD.newTitle] as File[]).map((file, index) => {
+                    console.log("URL.createObjectURL(file)", URL.createObjectURL(file));
+                    
                     return (
                       <Image
                         key={index}

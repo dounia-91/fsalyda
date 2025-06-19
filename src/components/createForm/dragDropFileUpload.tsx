@@ -1,15 +1,63 @@
 import Image from "next/image";
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { deleteFileFromS3 } from "@/lib/s3config";
 
 interface FileUploadProps {
-  imageFiles: File[];
-  setImgFiles: (imageFiles: File[]) => void;
+  imgFiles: File[];
+  setImgFiles: (imgFiles: File[]) => void;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ imageFiles, setImgFiles }) => {
+// Define a type to hold both File and its S3 key
+interface UploadedFile {
+  file: File;
+  s3Key: string;
+}
+
+const FileUpload: React.FC<FileUploadProps> = ({ imgFiles, setImgFiles }) => {
+
+
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [files, setFiles] = useState<File[]>(imageFiles);
+  const [files, setFiles] = useState<UploadedFile[]>([]);
+
+
+  //   const url = "https://fsalyda-stockage-2025.s3.amazonaws.com/uploads/e7f1e134-158b-4580-92a9-b45ea08412a2_Uploaded_Image_1";
+  // const filename = "Uploaded_Image_1.jpg"; // or .png, .gif, etc.
+  // const mimeType = "image/jpeg"; // set the correct type
+
+
+  async function urlToFile(key: string, filename: string, mimeType: string, s3Key: string): Promise<UploadedFile> {
+    try {
+      const response = await fetch(`https://fsalyda-stockage-2025.s3.amazonaws.com/${key}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.statusText}`);
+      }
+      const blob = await response.blob();
+      const file = new File([blob], filename, { type: mimeType });
+      return { file, s3Key };
+    } catch (err) {
+      console.error("Failed to fetch or convert file:", err);
+      // Optionally, you can return a placeholder File or handle this differently
+      throw err;
+    }
+  }
+
+  useEffect(() => {
+    // If imgFiles is an array of URLs (strings), convert them to UploadedFile objects
+    if (imgFiles.length > 0 && typeof imgFiles[0] === "string") {
+      Promise.all(
+        imgFiles.map((url, idx) =>
+          urlToFile(url.toString() as string, `Uploaded_Image_${idx + 1}.jpg`, "image/jpeg", url.toString())
+        )
+      ).then(setFiles);
+    } else if (imgFiles.length > 0 && imgFiles[0] instanceof File) {
+      // If already File objects, wrap them as UploadedFile objects with empty s3Key
+      setFiles((imgFiles as File[]).map(file => ({ file, s3Key: "" })));
+    } else {
+      setFiles([]);
+    }
+  }, [imgFiles]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -28,6 +76,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ imageFiles, setImgFiles }) => {
       fileInputRef.current.click();
     }
   };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -39,8 +88,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ imageFiles, setImgFiles }) => {
       newFiles.splice(index, 1, new File([blob], newName, { type: file.type }));
     });
     if (validateFiles(newFiles)) {
-      setFiles([...files, ...newFiles]);
-      setImgFiles([...imageFiles, ...newFiles]);
+      setFiles([...files, ...newFiles.map(file => ({ file, s3Key: "" }))]);
+      setImgFiles([...imgFiles, ...newFiles]);
     }
   };
 
@@ -53,10 +102,11 @@ const FileUpload: React.FC<FileUploadProps> = ({ imageFiles, setImgFiles }) => {
       newFiles.splice(index, 1, new File([blob], newName, { type: file.type }));
     });
     if (validateFiles(newFiles)) {
-      setFiles([...files, ...newFiles]);
-      setImgFiles([...imageFiles, ...newFiles]);
+      setFiles([...files, ...newFiles.map(file => ({ file, s3Key: "" }))]);
+      setImgFiles([...imgFiles, ...newFiles]);
     }
   };
+
   const validateFiles = (files: File[]) => {
     const maxSize = 2 * 1024 * 1024; // 2 MB in bytes
     const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
@@ -96,26 +146,27 @@ const FileUpload: React.FC<FileUploadProps> = ({ imageFiles, setImgFiles }) => {
           <span>Drag and drop files here, or click to select files</span>
         ) : (
           <div>
-            <span>Drag and drop files here, or click to select files</span>
+            <span>Drag and drop files here, ordd click to select files </span>
             <div className="flex items-center justify-center flex-wrap gap-5 p-2">
-              {files.map((file, index) => {
+              {files.map(({ file, s3Key }, index) => {
+            // <Image key={index} src={`https://fsalyda-stockage-2025.s3.amazonaws.com/${key}`} alt="image" width={400} height={200} />
+                
                 return (
-                  <Image
-                    key={index}
-                    src={URL.createObjectURL(file)}
-                    alt={file.name}
-                    width={100}
-                    height={100}
-                    className="w-[150px] h-auto"
-                  />
-                );
-              })}
+                <Image
+                  key={index}
+                  src={URL.createObjectURL(file)}
+                  alt={"uploaded image" + index}
+                  width={100}
+                  height={100}
+                  className="w-[150px] h-auto"
+                />
+              )})}
             </div>
           </div>
         )}
       </div>
       <ul className="space-y-1">
-        {files.map((file, index) => (
+        {files.map(({ file, s3Key }, index) => (
           <li
             key={index}
             className="flex items-center justify-between border border-green-500 rounded-lg p-1 mr-2"
@@ -125,19 +176,14 @@ const FileUpload: React.FC<FileUploadProps> = ({ imageFiles, setImgFiles }) => {
             </span>
             <i
               className="fa fa-trash"
-              onClick={() => {
-                const i = files.indexOf(file);
-                const newFiles = [...files];
-                newFiles.splice(i, 1);
-                newFiles.forEach((file, ind) => {
-                  const newName = `Uploaded Image ${ind + 1}`;
-                  const blob = new Blob([file], { type: file.type });
-                  newFiles.splice(
-                    ind,
-                    1,
-                    new File([blob], newName, { type: file.type })
-                  );
-                });
+              onClick={async () => {
+                console.log("handle click", s3Key);
+                const { success, message } = await deleteFileFromS3(s3Key);
+                console.log("delete operate -> ", success);
+                
+                // Use s3Key for deletion from S3
+                // Example: call your backend API to delete using s3Key
+                const newFiles = files.filter((_, i) => i !== index);
                 setFiles(newFiles);
               }}
             />

@@ -15,6 +15,7 @@ export const Signup = async (formData: FormData) => {
     const email = formData.get("email")!.toString().toLowerCase();
     const password = formData.get("password")!.toString();
     const existingManager = await BusinessUserModel.findOne({ companyName });
+    
     if (!existingManager) {
       return {
         success: false,

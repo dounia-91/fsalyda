@@ -14,7 +14,10 @@ export const uploadFileToS3 = async (file: File) => {
       },
     });
     // Upload file to S3
-    const key = `uploads/${uuidv4()}_${file.name}`;
+
+    // const key = `uploads/${uuidv4()}_${file.name}`;
+    const key = `uploads/${uuidv4()}`;
+
     const arrbuf = await file.arrayBuffer();
     const buffer = new Uint8Array(arrbuf);
     const params = {
@@ -24,9 +27,7 @@ export const uploadFileToS3 = async (file: File) => {
       ContentType: file.type,
     };
     await s3.send(new PutObjectCommand(params));
-    // Return S3 file URL
-    const fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${key}`;
-    return { success: true, status: 200, url: fileUrl };
+    return { success: true, status: 200, url: key };
   } catch (error) {
     console.error("Error uploading file to S3:", error);
     return {
@@ -36,6 +37,7 @@ export const uploadFileToS3 = async (file: File) => {
     };
   }
 };
+
 export const deleteFileFromS3 = async (key: string) => {
   try {
     const s3 = new S3Client({
@@ -45,9 +47,20 @@ export const deleteFileFromS3 = async (key: string) => {
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
       },
     });
+    console.log("key->", key, {
+      region: process.env.AWS_REGION!,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
+    }, {
+      Bucket: process.env.AWS_BUCKET_NAME!,
+      Key: key.trim(),
+    });
+
     const params = {
       Bucket: process.env.AWS_BUCKET_NAME!,
-      Key: key,
+      Key: key.trim(),
     };
     await s3.send(new DeleteObjectCommand(params));
     return { success: true, status: 200, message: "File deleted successfully" };
@@ -59,4 +72,13 @@ export const deleteFileFromS3 = async (key: string) => {
       error: error,
     };
   }
+};
+
+export const getPresignedUrl = async (filename:any) => {
+  const res = await fetch('/api/get-presigned-url', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename }),
+  });
+  return res.json(); 
 };
