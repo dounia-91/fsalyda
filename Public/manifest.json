@@ -1,0 +1,69 @@
+{
+  "name": "Fsalyda",
+  "short_name": "Fsalyda",
+  "description": "Fsalyda est une application web de gestion interne pour digitaliser les processus métiers des entreprises.",
+  "lang": "fr",
+  "id": "fsalyda",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2a2a2a",
+  "orientation": "portrait",
+  "categories": ["productivity", "business"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot1.png",
+      "sizes": "360x640",
+      "type": "image/png",
+      "label": "Vue formulaire"
+    },
+    {
+      "src": "/screenshot2.png",
+      "sizes": "360x640",
+      "type": "image/png",
+      "label": "Vue dashboard"
+    }
+  ],
+  "display_override": ["window-controls-overlay", "standalone"],
+  "shortcuts": [
+    {
+      "name": "Tableau de bord",
+      "short_name": "Dashboard",
+      "url": "/adminDashboard",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "web+fsalyda",
+      "url": "/?q=%s"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
