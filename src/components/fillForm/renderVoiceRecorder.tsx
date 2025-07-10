@@ -11,7 +11,6 @@ type Props = {
   setFormState: React.Dispatch<React.SetStateAction<FormState>>;
 };
 
-// Initialize S3 client
 const s3 = new S3Client({
   region: process.env.AWS_REGION!,
   credentials: {
@@ -20,7 +19,6 @@ const s3 = new S3Client({
   },
 });
 
-// Function to generate presigned URL
 const getPresignedUrl = async (key: string) => {
   const command = new GetObjectCommand({
     Bucket: 'fsalyda-stockage-2025',
@@ -38,17 +36,14 @@ export default function RenderVoiceRecorder({
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0); // durée en secondes
+  const [recordingTime, setRecordingTime] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [s3Key, setS3Key] = useState<string | null>(null);
 
-  // Format mm:ss
   const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, "0");
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
     const s = (seconds % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
   };
@@ -64,17 +59,20 @@ export default function RenderVoiceRecorder({
       const url = URL.createObjectURL(blob);
       setRecordedChunks(chunks);
       setAudioUrl(url);
-
       return () => URL.revokeObjectURL(url);
     }
   }, [formState, itemD.newTitle, preview]);
 
   useEffect(() => {
-    if (audioUrl) {
-      // Use audioUrl as a string
-      console.log('Audio URL:', audioUrl);
+    const value = formState[itemD.newTitle];
+    if (typeof value === "string" && value.startsWith("https://")) {
+      setAudioUrl(value);
+    } else if (Array.isArray(value) && value.length > 0) {
+      const blob = new Blob(value as Blob[], { type: "audio/webm;codecs=opus" });
+      const url = URL.createObjectURL(blob);
+      setAudioUrl(url);
     }
-  }, [audioUrl]);
+  }, [formState, itemD.newTitle]);
 
   const startRecording = async () => {
     try {
@@ -93,7 +91,6 @@ export default function RenderVoiceRecorder({
         clearInterval(intervalRef.current!);
         setRecordingTime(0);
 
-        // Upload to S3
         const blob = new Blob(chunks, { type: 'audio/webm;codecs=opus' });
         const key = `uploads/recording-${Date.now()}.webm`;
         try {
@@ -112,7 +109,6 @@ export default function RenderVoiceRecorder({
       mediaRecorderRef.current = recorder;
       setIsRecording(true);
 
-      // Démarrage du timer
       setRecordingTime(0);
       intervalRef.current = setInterval(() => {
         setRecordingTime((t) => t + 1);
@@ -127,7 +123,6 @@ export default function RenderVoiceRecorder({
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
     }
-    // clearInterval will be called in onstop of recorder
   };
 
   const fetchFromS3 = async (key: string) => {
@@ -152,13 +147,6 @@ export default function RenderVoiceRecorder({
     }
   }, [s3Key]);
 
-  useEffect(() => {
-    const value = formState[itemD.newTitle];
-    if (typeof value === "string" && value.startsWith("https://")) {
-      setAudioUrl(value);
-    }
-  }, [formState, itemD.newTitle]);
-  
   const deleteRecording = () => {
     setRecordedChunks([]);
     setAudioUrl(null);
@@ -182,14 +170,12 @@ export default function RenderVoiceRecorder({
 
   return (
     <div className="w-full flex flex-col items-start justify-start space-y-2">
-      <p
-        className={`w-full text-${itemD.newColor} ${itemD.size === "smaller"
-          ? "text-md"
-          : itemD.size === "normal"
-            ? "text-lg"
-            : "text-xl"
-          }`}
-      >
+      <p className={`w-full text-${itemD.newColor} ${itemD.size === "smaller"
+        ? "text-md"
+        : itemD.size === "normal"
+          ? "text-lg"
+          : "text-xl"
+        }`}>
         {itemD.newTitle} :
       </p>
 
@@ -220,7 +206,6 @@ export default function RenderVoiceRecorder({
             >
               ⏹️
             </button>
-            {/* Affichage durée */}
             {isRecording && (
               <span className="ml-2 font-mono text-lg">{formatTime(recordingTime)}</span>
             )}
