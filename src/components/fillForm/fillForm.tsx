@@ -27,6 +27,7 @@ type Props = {
   formToFillTitle: string;
   setFormToFillTitle: React.Dispatch<React.SetStateAction<string>>;
 };
+
 export default function FillForm({
   email,
   companyName,
@@ -88,7 +89,7 @@ export default function FillForm({
           { length: itemD.tableMaxRows! },
           (i: number) => [
             i + 1,
-            ...new Array(itemD.tableCols!.length - 1).fill(""),
+            ...new Array(itemD.tableCols!.length - 1).fill("")
           ]
         );
         emptyArray.forEach((row, index) => {
@@ -102,11 +103,10 @@ export default function FillForm({
     });
     setFormState(initState);
   }, [formItemDetails]);
+
   return (
     <div
-      className={`${
-        showFillFormModal ? "" : "hidden"
-      } fixed inset-0 z-10 bg-gray-800 bg-opacity-50 flex items-center justify-center`}
+      className={`$${showFillFormModal ? "" : "hidden"} fixed inset-0 z-10 bg-gray-800 bg-opacity-50 flex items-center justify-center`}
     >
       <form className="min-w-md max-w-[90vw] max-h-[90vh] bg-gradient-to-br from-blue-300 to-blue-500 p-6 rounded-lg shadow-lg flex flex-col items-start justify-start space-y-5 overflow-scroll">
         <h1 className="w-full text-center text-2xl font-bold">
@@ -115,102 +115,52 @@ export default function FillForm({
         {formItemDetails.map((itemD, index) => {
           if (itemD.title === "Input field") {
             return (
-              <RenderInputField
-                key={index}
-                itemD={itemD}
-                formState={formState}
-                setFormState={setFormState}
-              />
+              <RenderInputField key={index} itemD={itemD} formState={formState} setFormState={setFormState} />
             );
           }
           if (itemD.title === "Text Area") {
             return (
-              <RenderTextArea
-                key={index}
-                itemD={itemD}
-                formState={formState}
-                setFormState={setFormState}
-              />
+              <RenderTextArea key={index} itemD={itemD} formState={formState} setFormState={setFormState} />
             );
           }
           if (itemD.title === "Date & Time") {
             return (
-              <RenderDateTime
-                key={index}
-                itemD={itemD}
-                formState={formState}
-                setFormState={setFormState}
-              />
+              <RenderDateTime key={index} itemD={itemD} formState={formState} setFormState={setFormState} />
             );
           }
           if (itemD.title === "Check Box") {
             return (
-              <RenderCheckbox
-                key={index}
-                itemD={itemD}
-                formState={formState}
-                setFormState={setFormState}
-              />
+              <RenderCheckbox key={index} itemD={itemD} formState={formState} setFormState={setFormState} />
             );
           }
           if (itemD.title === "List") {
             return (
-              <RenderList
-                key={index}
-                itemD={itemD}
-                formState={formState}
-                setFormState={setFormState}
-              />
+              <RenderList key={index} itemD={itemD} formState={formState} setFormState={setFormState} />
             );
           }
           if (itemD.title === "Choice") {
             return (
-              <RenderChoice
-                key={index}
-                itemD={itemD}
-                formState={formState}
-                setFormState={setFormState}
-              />
+              <RenderChoice key={index} itemD={itemD} formState={formState} setFormState={setFormState} />
             );
           }
           if (itemD.title === "Photo") {
             return (
-              <RenderPhoto
-                key={index}
-                itemD={itemD}
-                formState={formState}
-                setFormState={setFormState}
-              />
+              <RenderPhoto key={index} itemD={itemD} formState={formState} setFormState={setFormState} />
             );
           }
           if (itemD.title === "Voice Recorder") {
             return (
-              <VoiceRecorder
-                key={index}
-                itemD={itemD}
-                formState={formState}
-                setFormState={setFormState}
-              />
+              <VoiceRecorder key={index} itemD={itemD} formState={formState} setFormState={setFormState} />
             );
           }
           if (itemD.title === "Attached file") {
             return (
-              <RenderAttachedFile
-                key={index}
-                itemD={itemD}
-                formState={formState}
-                setFormState={setFormState}
-              />
+              <RenderAttachedFile key={index} itemD={itemD} formState={formState} setFormState={setFormState} />
             );
           }
           if (itemD.title === "Table") {
             return (
-              <RenderTable
-                key={index}
-                itemD={itemD}
-                formState={formState}
-                setFormState={setFormState}
-              />
+              <RenderTable key={index} itemD={itemD} formState={formState} setFormState={setFormState} />
             );
           }
           if (itemD.title === "Image") {
@@ -218,13 +168,7 @@ export default function FillForm({
           }
           if (itemD.title === "Calculation") {
             return (
-              <RenderCalculation
-                key={index}
-                itemD={itemD}
-                formState={formState}
-                setFormState={setFormState}
-                formItemDetails={formItemDetails}
-              />
+              <RenderCalculation key={index} itemD={itemD} formState={formState} setFormState={setFormState} formItemDetails={formItemDetails} />
             );
           }
         })}
@@ -244,9 +188,7 @@ export default function FillForm({
                       row.map((colItem) => {
                         if (
                           parseInt(row[0]) <=
-                          parseInt(
-                            formState[`${itemD.newTitle}RowCount`] as string
-                          )
+                          parseInt(formState[`${itemD.newTitle}RowCount`] as string)
                         ) {
                           if (colItem === "") {
                             flag = 1;
@@ -255,19 +197,14 @@ export default function FillForm({
                       });
                     });
                     if (flag === 1) {
-                      errors.push(
-                        `Every field in ${itemD.newTitle} is required`
-                      );
+                      errors.push(`Every field in ${itemD.newTitle} is required`);
                     }
                   }
                   if (
                     formState[itemD.newTitle] === "" ||
                     formState[itemD.newTitle] === null ||
                     formState[itemD.newTitle] === undefined ||
-                    (formState[itemD.newTitle] as string[]).length === 0 ||
-                    (formState[itemD.newTitle] as File[]).length === 0 ||
-                    (formState[itemD.newTitle] as Blob[]).length === 0 ||
-                    (formState[itemD.newTitle] as string[][]).length === 0
+                    (Array.isArray(formState[itemD.newTitle]) && formState[itemD.newTitle].length === 0)
                   ) {
                     errors.push(`${itemD.newTitle} is required`);
                   }
@@ -278,7 +215,6 @@ export default function FillForm({
                 setIsSavingForm(false);
                 return;
               }
-              // save the form
               try {
                 const recordData = new FormData();
                 formItemDetails.map((itemD) => {
@@ -356,31 +292,6 @@ export default function FillForm({
               } finally {
                 setIsSavingForm(false);
               }
-              // try {
-              //   const response = await axios.post("/api/saveFilledForm", {
-              //     title: formToFillTitle,
-              //     filledBy: email,
-              //     formItemDetails,
-              //     formState,
-              //     companyName,
-              //   });
-              //   if (response.data.success) {
-              //     toast("Record saved Successfully", { type: "success" });
-              //     setFormItemDetails([]);
-              //     setShowFillFormModal(false);
-              //   } else {
-              //     toast("Error saving the form, Please try again", {
-              //       type: "error",
-              //     });
-              //   }
-              // } catch (error) {
-              //   console.log(error);
-              //   toast("Error saving the form, Please try again", {
-              //     type: "error",
-              //   });
-              // } finally {
-              //   setIsSavingForm(false);
-              // }
             }}
           >
             {isSavingForm ? (
