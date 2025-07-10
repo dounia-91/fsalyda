@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Trash2, Pencil, Download } from "lucide-react"
 
 type RenderPhotoProps = {
-  file: File
+  file: File | undefined
   index: number
   updateName: (index: number, newName: string) => void
   removeFile: (index: number) => void
@@ -21,13 +21,15 @@ export default function RenderPhoto({
 }: RenderPhotoProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [tempName, setTempName] = useState(file.name)
+  const [tempName, setTempName] = useState(file?.name || "")
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    const url = URL.createObjectURL(file)
-    setPreviewUrl(url)
-    return () => URL.revokeObjectURL(url)
+    if (file) {
+      const url = URL.createObjectURL(file)
+      setPreviewUrl(url)
+      return () => URL.revokeObjectURL(url)
+    }
   }, [file])
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,7 +38,7 @@ export default function RenderPhoto({
 
   const handleNameSave = () => {
     setIsEditing(false)
-    if (tempName !== file.name) {
+    if (file && tempName !== file.name) {
       updateName(index, tempName)
     }
   }
@@ -111,7 +113,7 @@ export default function RenderPhoto({
 
       <div className="flex items-center justify-between w-full px-1">
         <span className="text-xs text-gray-500">
-          {(file.size / 1024).toFixed(1)} ko
+          {(file?.size ? file.size / 1024 : 0).toFixed(1)} ko
         </span>
         <button
           onClick={downloadImage}
@@ -133,3 +135,4 @@ export default function RenderPhoto({
     </div>
   )
 }
+
