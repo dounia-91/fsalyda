@@ -5,8 +5,14 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   await dbConnect();
   try {
-    const { title, message, from } = await req.json();
-    const notification = new NotificationModel({ title, message, from });
+    const { title, message, fromUser, toUser } = await req.json();
+    if (!title || !message || !fromUser || !toUser) {
+      return NextResponse.json(
+        { success: false, message: "Missing required fields: title, message, fromUser, toUser" },
+        { status: 400 }
+      );
+    }
+    const notification = new NotificationModel({ title, message, fromUser, toUser });
     await notification.save();
     return NextResponse.json(
       { success: true, message: "Notification created successfully" },
