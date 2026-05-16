@@ -106,7 +106,7 @@ export default function FillForm({
 
   return (
     <div
-      className={`$${showFillFormModal ? "" : "hidden"} fixed inset-0 z-10 bg-gray-800 bg-opacity-50 flex items-center justify-center`}
+      className={`${showFillFormModal ? "" : "hidden"} fhixed inset-0 z-10 bg-gray-800 bg-opacity-50 flex items-center justify-center`}
     >
       <form className="min-w-md max-w-[90vw] max-h-[90vh] bg-gradient-to-br from-blue-300 to-blue-500 p-6 rounded-lg shadow-lg flex flex-col items-start justify-start space-y-5 overflow-scroll">
         <h1 className="w-full text-center text-2xl font-bold">
