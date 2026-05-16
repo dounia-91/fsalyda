@@ -6,22 +6,26 @@ export async function POST(request: NextRequest) {
   await dbConnect();
   try {
     const { email } = await request.json();
-    const notifications = await NotificationModel.find({});
+    if (!email) {
+      return NextResponse.json(
+        { success: false, message: "Missing required field: email" },
+        { status: 400 }
+      );
+    }
+    const notifications = await NotificationModel.find({ toUser: email })
+      .sort({ createdAt: -1 })
+      .limit(50);
     if (!notifications || notifications.length === 0) {
       return NextResponse.json(
-        { success: false, message: "No Notifications found" },
+        { success: true, message: "No Notifications found", notifications: [] },
         { status: 200 }
       );
     }
-    const notif: Notification[] = [];
-    notifications.map((n: Notification) => {
-      if (n.toUser === email) notif.push(n);
-    });
     return NextResponse.json(
       {
         success: true,
         message: "Notifications fetched successfully",
-        notifications: notif,
+        notifications,
       },
       { status: 200 }
     );
