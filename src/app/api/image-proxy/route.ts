@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const command = new GetObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME!,
+      Bucket: (process.env.AWS_S3_BUCKET || process.env.AWS_BUCKET_NAME)!,
       Key: key,
     });
     
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (err) {
     console.error("S3 fetch error:", err);
-    console.error("Bucket:", process.env.S3_BUCKET_NAME);
+    console.error("Bucket:", process.env.AWS_S3_BUCKET || process.env.AWS_BUCKET_NAME);
     console.error("Key:", key);
     return NextResponse.json({ error: "Image not found or S3 access error", details: String(err) }, { status: 404 });
   }
